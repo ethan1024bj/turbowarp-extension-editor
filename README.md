@@ -3,7 +3,7 @@
   <img src="https://img.shields.io/badge/AI-mimo--v2.5--pro-FFAB19?style=flat-square" alt="AI Powered">
   <img src="https://img.shields.io/badge/License-MIT-59C059?style=flat-square" alt="License">
 </p>
-
+我是一名中关村三小只三年级学生，我三年前开始学习Scratch编程、一年前开始学习C++编程、一个月前开始学习vibecoding。这是我做的第一个开源项目。
 <h1 align="center">TurboWarp Extension Editor</h1>
 
 <p align="center">
