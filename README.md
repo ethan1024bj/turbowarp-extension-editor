@@ -29,6 +29,10 @@
 - **参数管理** —— 支持 STRING / NUMBER / BOOLEAN 参数类型，可设默认值
 - **本地存储** —— 自动保存，刷新不丢失
 
+
+<img width="1872" height="995" alt="d0900db8717aa89161508abaa34d6f5b" src="https://github.com/user-attachments/assets/9d886aba-7912-41c9-993a-0be770f321c4" />
+
+
 ## Quick Start
 
 ```bash
@@ -93,6 +97,7 @@ LLM_MODEL=gpt-4o-mini
 1. 打开 [turbowarp.org/editor](https://turbowarp.org/editor)
 2. 左下角 **高级** → **加载未打包的扩展**
 3. 粘贴代码或选择下载的 .js 文件
+
 
 ## Project Structure
 
