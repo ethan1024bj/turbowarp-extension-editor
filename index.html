@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TurboWarp 扩展编辑器</title>
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/monokai.min.css">
+</head>
+<body>
+<div id="app">
+  <header>
+    <div class="logo">
+      <svg width="28" height="28" viewBox="0 0 28 28"><circle cx="14" cy="14" r="13" fill="#4FC3F7"/><text x="14" y="19" text-anchor="middle" fill="#fff" font-size="14" font-weight="bold">T</text></svg>
+      <h1>TurboWarp 扩展编辑器</h1>
+    </div>
+    <div class="header-actions">
+      <button id="btn-auto-generate" class="btn btn-accent" title="根据左侧配置自动生成代码">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1a.5.5 0 0 1 .5.5v5.793l2.146-2.147a.5.5 0 0 1 .708.708l-3 3a.5.5 0 0 1-.708 0l-3-3a.5.5 0 1 1 .708-.708L7.5 7.293V1.5A.5.5 0 0 1 8 1z"/><path d="M2 13.5V10a.5.5 0 0 1 1 0v3h10v-3a.5.5 0 0 1 1 0v3.5a.5.5 0 0 1-.5.5h-11a.5.5 0 0 1-.5-.5z"/></svg>
+        自动编写
+      </button>
+      <button id="btn-download" class="btn btn-primary" title="下载为 .js 文件">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/><path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/></svg>
+        下载 JS
+      </button>
+      <button id="btn-export-url" class="btn btn-secondary" title="生成可分享的 URL">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M4.715 6.542 3.343 7.914a3 3 0 1 0 4.243 4.243l1.828-1.829A3 3 0 0 0 8.586 5.5L8 6.086a1 1 0 0 0-.154.199 2 2 0 0 1 .861 3.337L6.88 11.45a2 2 0 1 1-2.83-2.83l.793-.792a4.018 4.018 0 0 1-.128-1.287z"/><path d="M6.586 4.672A3 3 0 0 0 7.414 9.5l.775-.776a2 2 0 0 1-.896-3.346L9.12 3.55a2 2 0 1 1 2.83 2.83l-.793.792c.112.42.155.855.128 1.287l1.372-1.372a3 3 0 1 0-4.243-4.243L6.586 4.672z"/></svg>
+        导出 URL
+      </button>
+      <button id="btn-import-url" class="btn btn-secondary" title="从 URL 导入">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1a.5.5 0 0 1 .5.5v5.793l2.146-2.147a.5.5 0 0 1 .708.708l-3 3a.5.5 0 0 1-.708 0l-3-3a.5.5 0 1 1 .708-.708L7.5 7.293V1.5A.5.5 0 0 1 8 1z"/><path d="M2 13.5V10a.5.5 0 0 1 1 0v3h10v-3a.5.5 0 0 1 1 0v3.5a.5.5 0 0 1-.5.5h-11a.5.5 0 0 1-.5-.5z" transform="rotate(180 8 7)"/></svg>
+        导入 URL
+      </button>
+    </div>
+  </header>
+
+  <!-- AI Natural Language Bar -->
+  <div class="ai-bar">
+    <div class="ai-bar-inner">
+      <svg class="ai-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a4 4 0 0 1 4 4v1a3 3 0 0 1 3 3v1a2 2 0 0 1-2 2h-1l1 5H7l1-5H7a2 2 0 0 1-2-2v-1a3 3 0 0 1 3-3V6a4 4 0 0 1 4-4z"/><circle cx="9" cy="9" r="1" fill="currentColor"/><circle cx="15" cy="9" r="1" fill="currentColor"/></svg>
+      <textarea id="ai-input" rows="1" placeholder="用自然语言描述你想要的积木，例如：创建一个计算器积木，输入两个数字，返回它们的和"></textarea>
+      <button id="btn-ai-generate" class="btn btn-ai">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M15.854.146a.5.5 0 0 1 .11.54l-5.819 14.547a.75.75 0 0 1-1.329.124l-3.178-4.995L.643 7.184a.75.75 0 0 1 .124-1.33L15.314.037a.5.5 0 0 1 .54.11z"/></svg>
+        生成
+      </button>
+    </div>
+    <div id="ai-status" class="ai-status" style="display:none"></div>
+  </div>
+
+  <div class="main-layout">
+    <!-- LEFT: Extension Config -->
+    <aside class="panel panel-config" id="panel-config">
+      <div class="panel-header">
+        <h2>扩展配置</h2>
+      </div>
+      <div class="panel-body">
+        <!-- Extension Info -->
+        <section class="config-section">
+          <h3 class="section-title">基本信息</h3>
+          <div class="form-group">
+            <label>扩展 ID</label>
+            <input type="text" id="ext-id" value="myextension" placeholder="myextension (仅小写字母)">
+          </div>
+          <div class="form-group">
+            <label>扩展名称</label>
+            <input type="text" id="ext-name" value="My TurboWarp" placeholder="My TurboWarp">
+          </div>
+        </section>
+
+        <!-- Block List -->
+        <section class="config-section">
+          <h3 class="section-title">
+            积木列表
+            <button id="btn-add-block" class="btn-icon" title="添加积木">
+              <svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor"><path d="M8 2a.5.5 0 0 1 .5.5v5h5a.5.5 0 0 1 0 1h-5v5a.5.5 0 0 1-1 0v-5h-5a.5.5 0 0 1 0-1h5v-5A.5.5 0 0 1 8 2z"/></svg>
+            </button>
+          </h3>
+          <div id="block-list" class="block-list"></div>
+        </section>
+
+        <!-- Block Editor -->
+        <section class="config-section" id="block-editor-section" style="display:none">
+          <h3 class="section-title">编辑积木</h3>
+          <div class="form-group">
+            <label>积木名称 (opcode)</label>
+            <input type="text" id="blk-opcode" placeholder="greet">
+          </div>
+          <div class="form-group">
+            <label>积木类型 (blockType)</label>
+            <select id="blk-blockType">
+              <option value="Scratch.BlockType.COMMAND">指令块 (COMMAND)</option>
+              <option value="Scratch.BlockType.REPORTER">Reporter - 返回字符串/数字</option>
+              <option value="Scratch.BlockType.BOOLEAN">Boolean - 返回 true/false</option>
+              <option value="Scratch.BlockType.HAT">帽子块 (HAT)</option>
+              <option value="Scratch.BlockType.CONDITIONAL">条件块 (CONDITIONAL)</option>
+              <option value="Scratch.BlockType.LOOP">循环块 (LOOP)</option>
+              <option value="Scratch.BlockType.BUTTON">按钮 (BUTTON)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>显示文本 (text)</label>
+            <input type="text" id="blk-text" placeholder="Hello World! [TEXT]">
+            <small>用 [参数名] 定义参数占位符</small>
+          </div>
+          <div class="form-group">
+            <label>
+              <input type="checkbox" id="blk-isEdgeActivated"> 边缘触发 (isEdgeActivated)
+            </label>
+          </div>
+
+          <!-- Arguments -->
+          <div class="form-group">
+            <label>
+              参数列表
+              <button id="btn-add-arg" class="btn-icon" title="添加参数">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 2a.5.5 0 0 1 .5.5v5h5a.5.5 0 0 1 0 1h-5v5a.5.5 0 0 1-1 0v-5h-5a.5.5 0 0 1 0-1h5v-5A.5.5 0 0 1 8 2z"/></svg>
+              </button>
+            </label>
+            <div id="arg-list" class="arg-list"></div>
+          </div>
+
+          <!-- Color -->
+          <div class="form-group">
+            <label>积木颜色</label>
+            <div class="color-input-group">
+              <input type="color" id="blk-color-picker" value="#4C97FF">
+              <input type="text" id="blk-color" value="/*#4C97FF*/" placeholder="/*#4C97FF*/">
+              <span class="color-preview" id="blk-color-preview"></span>
+            </div>
+            <div class="color-presets">
+              <button class="color-preset" data-color="#4C97FF" style="background:#4C97FF" title="运动"></button>
+              <button class="color-preset" data-color="#9966FF" style="background:#9966FF" title="事件"></button>
+              <button class="color-preset" data-color="#CF63CF" style="background:#CF63CF" title="控制"></button>
+              <button class="color-preset" data-color="#FFAB19" style="background:#FFAB19" title="侦测"></button>
+              <button class="color-preset" data-color="#FF6680" style="background:#FF6680" title="声音"></button>
+              <button class="color-preset" data-color="#5CB1D6" style="background:#5CB1D6" title="画笔"></button>
+              <button class="color-preset" data-color="#59C059" style="background:#59C059" title="数据"></button>
+              <button class="color-preset" data-color="#FF8C1A" style="background:#FF8C1A" title="运算"></button>
+            </div>
+          </div>
+
+          <!-- Function body -->
+          <div class="form-group">
+            <label>函数实现 (JS)</label>
+            <textarea id="blk-function" rows="6" placeholder="// args.TEXT 是参数值&#10;console.log(args.TEXT);"></textarea>
+          </div>
+
+          <!-- Return value -->
+          <div class="form-group" id="return-group">
+            <label>返回值表达式</label>
+            <input type="text" id="blk-return" placeholder='return args.TEXT;'>
+          </div>
+
+          <div class="form-actions">
+            <button id="btn-save-block" class="btn btn-primary btn-sm">保存积木</button>
+            <button id="btn-delete-block" class="btn btn-danger btn-sm">删除积木</button>
+            <button id="btn-cancel-block" class="btn btn-secondary btn-sm">取消</button>
+          </div>
+        </section>
+
+        <!-- System Params -->
+        <section class="config-section">
+          <h3 class="section-title">系统参数</h3>
+          <div class="sys-params">
+            <div class="sys-param-item">
+              <span class="sys-label">平台</span>
+              <span class="sys-value" id="sys-platform">-</span>
+            </div>
+            <div class="sys-param-item">
+              <span class="sys-label">屏幕</span>
+              <span class="sys-value" id="sys-screen">-</span>
+            </div>
+            <div class="sys-param-item">
+              <span class="sys-label">语言</span>
+              <span class="sys-value" id="sys-lang">-</span>
+            </div>
+            <div class="sys-param-item">
+              <span class="sys-label">在线</span>
+              <span class="sys-value" id="sys-online">-</span>
+            </div>
+            <div class="sys-param-item">
+              <span class="sys-label">CPU 核心</span>
+              <span class="sys-value" id="sys-cores">-</span>
+            </div>
+            <div class="sys-param-item">
+              <span class="sys-label">内存</span>
+              <span class="sys-value" id="sys-memory">-</span>
+            </div>
+          </div>
+        </section>
+      </div>
+    </aside>
+
+    <!-- RIGHT: Code + Preview -->
+    <div class="panel panel-right">
+      <!-- Tab bar -->
+      <div class="tab-bar">
+        <button class="tab active" data-tab="tab-preview">积木预览</button>
+        <button class="tab" data-tab="tab-code">代码编辑</button>
+        <button class="tab" data-tab="tab-debug">调试控制台</button>
+        <button class="tab" data-tab="tab-ref">语法参考</button>
+      </div>
+
+      <!-- Preview Tab -->
+      <div class="tab-content active" id="tab-preview">
+        <div class="preview-toolbar">
+          <button id="btn-refresh-preview" class="btn btn-sm btn-secondary">刷新预览</button>
+          <span class="preview-hint">预览积木外观（颜色、形状、文本）</span>
+        </div>
+        <div id="block-preview" class="block-preview-area">
+          <div class="preview-empty">点击「自动编写」或添加积木后预览</div>
+        </div>
+      </div>
+
+      <!-- Code Tab -->
+      <div class="tab-content" id="tab-code">
+        <div class="code-toolbar">
+          <button id="btn-format-code" class="btn btn-sm btn-secondary">格式化代码</button>
+          <button id="btn-copy-code" class="btn btn-sm btn-secondary">复制代码</button>
+        </div>
+        <div id="code-editor-container">
+          <textarea id="code-editor"></textarea>
+        </div>
+      </div>
+
+      <!-- Debug Tab -->
+      <div class="tab-content" id="tab-debug">
+        <div class="debug-toolbar">
+          <button id="btn-run-debug" class="btn btn-sm btn-accent">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="m11.596 8.697-6.363 3.692c-.54.313-1.233-.066-1.233-.697V4.308c0-.63.692-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393z"/></svg>
+            运行测试
+          </button>
+          <button id="btn-clear-debug" class="btn btn-sm btn-secondary">清空</button>
+        </div>
+        <div id="debug-output" class="debug-output">
+          <div class="debug-line debug-info">调试控制台已就绪。点击「运行测试」执行扩展代码。</div>
+        </div>
+      </div>
+
+      <!-- Syntax Reference Tab -->
+      <div class="tab-content" id="tab-ref">
+        <div class="ref-body">
+
+          <!-- 1. 基本结构 -->
+          <section class="ref-section">
+            <h3 class="ref-title">1. 扩展基本结构</h3>
+            <pre class="ref-code"><code>class MyExtension {
+    getInfo() {
+        return {
+            id: 'myextension',      <span class="ref-cmt">// 小写字母+数字</span>
+            name: 'My Extension',   <span class="ref-cmt">// 显示名称</span>
+            blocks: [ ... ]         <span class="ref-cmt">// 积木数组</span>
+        };
+    }
+    <span class="ref-cmt">// 积木方法写在这里</span>
+}
+Scratch.extensions.register(new MyExtension());</code></pre>
+          </section>
+
+          <!-- 2. 积木类型 -->
+          <section class="ref-section">
+            <h3 class="ref-title">2. 积木类型 (blockType)</h3>
+            <table class="ref-table">
+              <thead><tr><th>类型</th><th>说明</th><th>返回值</th></tr></thead>
+              <tbody>
+                <tr><td><code>Scratch.BlockType.COMMAND</code></td><td>指令块 - 执行操作</td><td>无</td></tr>
+                <tr><td><code>Scratch.BlockType.REPORTER</code></td><td>返回值块 - 返回字符串/数字</td><td>string/number</td></tr>
+                <tr><td><code>Scratch.BlockType.BOOLEAN</code></td><td>布尔块 - 返回 true/false</td><td>boolean</td></tr>
+                <tr><td><code>Scratch.BlockType.HAT</code></td><td>帽子块 - 事件触发</td><td>无</td></tr>
+                <tr><td><code>Scratch.BlockType.CONDITIONAL</code></td><td>条件块 - 包含子栈</td><td>无</td></tr>
+                <tr><td><code>Scratch.BlockType.LOOP</code></td><td>循环块 - 包含子栈</td><td>无</td></tr>
+                <tr><td><code>Scratch.BlockType.BUTTON</code></td><td>按钮 - 点击触发</td><td>无</td></tr>
+              </tbody>
+            </table>
+          </section>
+
+          <!-- 3. 参数类型 -->
+          <section class="ref-section">
+            <h3 class="ref-title">3. 参数类型 (argumentType)</h3>
+            <table class="ref-table">
+              <thead><tr><th>类型</th><th>说明</th><th>默认值示例</th></tr></thead>
+              <tbody>
+                <tr><td><code>Scratch.ArgumentType.STRING</code></td><td>字符串输入框</td><td><code>defaultValue: 'hello'</code></td></tr>
+                <tr><td><code>Scratch.ArgumentType.NUMBER</code></td><td>数字输入框</td><td><code>defaultValue: '42'</code></td></tr>
+                <tr><td><code>Scratch.ArgumentType.BOOLEAN</code></td><td>布尔判断（六边形）</td><td>无 defaultValue</td></tr>
+                <tr><td><code>Scratch.ArgumentType.ANGLE</code></td><td>角度选择器</td><td><code>defaultValue: '90'</code></td></tr>
+                <tr><td><code>Scratch.ArgumentType.COLOR</code></td><td>颜色选择器</td><td><code>defaultValue: '#ff0000'</code></td></tr>
+                <tr><td><code>Scratch.ArgumentType.IMAGE</code></td><td>图片数据</td><td>需 dataURI 格式</td></tr>
+                <tr><td><code>Scratch.ArgumentType.MATRIX</code></td><td>矩阵编辑器</td><td><code>defaultValue: '0101010101010101010101010'</code></td></tr>
+                <tr><td><code>Scratch.ArgumentType.NOTE</code></td><td>音符选择器</td><td><code>defaultValue: '60'</code></td></tr>
+              </tbody>
+            </table>
+          </section>
+
+          <!-- 4. 积木颜色 -->
+          <section class="ref-section">
+            <h3 class="ref-title">4. 积木颜色 (color)</h3>
+            <p class="ref-desc">格式: <code>/*#RRGGBB*/</code></p>
+            <div class="ref-color-grid">
+              <div class="ref-color-item"><span class="ref-swatch" style="background:#4C97FF"></span><code>#4C97FF</code> 运动</div>
+              <div class="ref-color-item"><span class="ref-swatch" style="background:#9966FF"></span><code>#9966FF</code> 事件</div>
+              <div class="ref-color-item"><span class="ref-swatch" style="background:#CF63CF"></span><code>#CF63CF</code> 控制</div>
+              <div class="ref-color-item"><span class="ref-swatch" style="background:#FFAB19"></span><code>#FFAB19</code> 侦测</div>
+              <div class="ref-color-item"><span class="ref-swatch" style="background:#FF6680"></span><code>#FF6680</code> 声音</div>
+              <div class="ref-color-item"><span class="ref-swatch" style="background:#5CB1D6"></span><code>#5CB1D6</code> 画笔</div>
+              <div class="ref-color-item"><span class="ref-swatch" style="background:#59C059"></span><code>#59C059</code> 数据</div>
+              <div class="ref-color-item"><span class="ref-swatch" style="background:#FF8C1A"></span><code>#FF8C1A</code> 运算</div>
+            </div>
+          </section>
+
+          <!-- 5. 显示文本 -->
+          <section class="ref-section">
+            <h3 class="ref-title">5. 显示文本 (text)</h3>
+            <p class="ref-desc">用 <code>[参数名]</code> 插入参数占位符：</p>
+            <pre class="ref-code"><code>text: '将 [A] 和 [B] 相加'          <span class="ref-cmt">// 两个参数</span>
+text: '说 [MESSAGE]'               <span class="ref-cmt">// 一个参数</span>
+text: '当 [FLAG] 被点击时'          <span class="ref-cmt">// 中文文本</span>
+text: 'set [VAR] to [VALUE]'       <span class="ref-cmt">// 英文文本</span></code></pre>
+          </section>
+
+          <!-- 6. arguments 定义 -->
+          <section class="ref-section">
+            <h3 class="ref-title">6. 参数定义 (arguments)</h3>
+            <pre class="ref-code"><code>arguments: {
+    A: {
+        type: Scratch.ArgumentType.NUMBER,
+        defaultValue: '0'
+    },
+    B: {
+        type: Scratch.ArgumentType.STRING,
+        defaultValue: 'hello'
+    },
+    FLAG: {
+        type: Scratch.ArgumentType.BOOLEAN
+    }
+}</code></pre>
+          </section>
+
+          <!-- 7. 函数实现 -->
+          <section class="ref-section">
+            <h3 class="ref-title">7. 函数实现 (方法体)</h3>
+            <pre class="ref-code"><code><span class="ref-cmt">// COMMAND 指令块 - 无返回值</span>
+greet({ NAME }) {
+    console.log('Hello ' + NAME);
+}
+
+<span class="ref-cmt">// REPORTER 返回值块 - 必须 return</span>
+add({ A, B }) {
+    return Number(A) + Number(B);
+}
+
+<span class="ref-cmt">// BOOLEAN 布尔块 - 必须 return true/false</span>
+isEqual({ A, B }) {
+    return String(A) === String(B);
+}
+
+<span class="ref-cmt">// 使用 util 控制 C-block 执行次数</span>
+repeatN({ TIMES }, util) {
+    for (let i = 0; i < TIMES; i++) {
+        util.stackFrame.executed++;
+        if (util.stackFrame.executed > TIMES) break;
+    }
+}</code></pre>
+          </section>
+
+          <!-- 8. 常用 API -->
+          <section class="ref-section">
+            <h3 class="ref-title">8. 常用 Scratch Runtime API</h3>
+            <pre class="ref-code"><code><span class="ref-cmt">// 获取/设置角色属性</span>
+Scratch.vm.runtime.targets[0].x           <span class="ref-cmt">// x 坐标</span>
+Scratch.vm.runtime.targets[0].y           <span class="ref-cmt">// y 坐标</span>
+Scratch.vm.runtime.targets[0].direction   <span class="ref-cmt">// 方向</span>
+Scratch.vm.runtime.targets[0].setVisible(false) <span class="ref-cmt">// 隐藏</span>
+
+<span class="ref-cmt">// 全局变量</span>
+Scratch.vm.runtime.ioDevices.clock.projectTimer()
+
+<span class="ref-cmt">// 键盘输入</span>
+Scratch.vm.runtime.ioDevices.keyboard.isKeyDown('space')
+
+<span class="ref-cmt">// 发送云变量消息</span>
+Scratch.vm.runtime.ioDevices.cloud.requestUpdateVariable('var', 123)
+
+<span class="ref-cmt">// 扩展沙盒模式检查</span>
+if (!Scratch.extensions.unsandboxed) {
+    throw new Error('需要非沙盒模式');
+}</code></pre>
+          </section>
+
+          <!-- 9. 完整示例 -->
+          <section class="ref-section">
+            <h3 class="ref-title">9. 完整示例</h3>
+            <pre class="ref-code"><code>class MathTools {
+    getInfo() {
+        return {
+            id: 'mathtools',
+            name: '数学工具',
+            blocks: [
+                {
+                    opcode: 'add',
+                    blockType: Scratch.BlockType.REPORTER,
+                    text: '[A] + [B]',
+                    color: '/*#FF8C1A*/',
+                    arguments: {
+                        A: { type: Scratch.ArgumentType.NUMBER, defaultValue: '0' },
+                        B: { type: Scratch.ArgumentType.NUMBER, defaultValue: '0' }
+                    }
+                },
+                {
+                    opcode: 'isPositive',
+                    blockType: Scratch.BlockType.BOOLEAN,
+                    text: '[N] > 0 ?',
+                    color: '/*#FF8C1A*/',
+                    arguments: {
+                        N: { type: Scratch.ArgumentType.NUMBER, defaultValue: '1' }
+                    }
+                }
+            ]
+        };
+    }
+
+    add({ A, B }) {
+        return Number(A) + Number(B);
+    }
+
+    isPositive({ N }) {
+        return Number(N) > 0;
+    }
+}
+
+Scratch.extensions.register(new MathTools());</code></pre>
+          </section>
+
+          <!-- 10. 上传方法 -->
+          <section class="ref-section">
+            <h3 class="ref-title">10. 加载扩展到 TurboWarp</h3>
+            <p class="ref-desc">
+              <strong>方法一：</strong> 打开 <a href="https://turbowarp.org/editor" target="_blank" rel="noopener">turbowarp.org/editor</a> → 左下角「高级」→ 「加载未打包的扩展」→ 粘贴代码或选择 .js 文件<br>
+              <strong>方法二：</strong> 将 .js 文件上传到可访问的 URL，在扩展URL栏填入该地址<br>
+              <strong>方法三：</strong> 在编辑器地址栏后加 <code>#extension=URL</code> 参数自动加载
+            </p>
+          </section>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast" class="toast"></div>
+
+<!-- URL Modal -->
+<div id="url-modal" class="modal" style="display:none">
+  <div class="modal-content">
+    <h3>导出为 URL</h3>
+    <p>复制以下 URL 可分享给他人，对方打开即可导入你的扩展配置：</p>
+    <textarea id="url-output" readonly rows="4"></textarea>
+    <div class="modal-actions">
+      <button id="btn-copy-url" class="btn btn-primary btn-sm">复制 URL</button>
+      <button id="btn-close-modal" class="btn btn-secondary btn-sm">关闭</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/javascript/javascript.min.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
