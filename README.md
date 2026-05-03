@@ -7,7 +7,9 @@
 <h1 align="center">TurboWarp Extension Editor</h1>
 
 <p align="center">
-  <b>用自然语言创建 TurboWarp 扩展积木 —— 说一句话，出一个积木</b>
+  <b>难道你还在为不会写自定义扩展而发愁吗？<br>
+    试试这款编辑器,新手快速入门几分钟搞定超复杂扩展。<br>
+    用自然语言创建 TurboWarp 扩展积木 —— 说一句话，出一个积木。</b>
 </p>
 
 <p align="center">
@@ -95,7 +97,7 @@ LLM_MODEL=gpt-4o-mini
 ### 加载到 TurboWarp
 
 1. 打开 [turbowarp.org/editor](https://turbowarp.org/editor)
-2. 左下角 **高级** → **加载未打包的扩展**
+2. 左下角 **扩展** → **加载自定义扩展**→ **文本/URL/文件**
 3. 粘贴代码或选择下载的 .js 文件
 
 
