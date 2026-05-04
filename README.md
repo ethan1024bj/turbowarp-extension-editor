@@ -1,6 +1,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/Platform-TurboWarp-4C97FF?style=flat-square&logo=scratch&logoColor=white" alt="TurboWarp">
   <img src="https://img.shields.io/badge/AI-Powered-FFAB19?style=flat-square" alt="AI Powered">
+  <img src="https://img.shields.io/badge/🌐-中文%20%7C%20English-59C059?style=flat-square" alt="Bilingual">
   <img src="https://img.shields.io/badge/License-MIT-59C059?style=flat-square" alt="License">
 </p>
 
@@ -44,6 +45,7 @@ I am 9 , a primary student. I like the TurboWarp especially custom extension fun
 | **颜色配置** / **Color System** | 三级颜色系统（浅色/中色/深色），预设色板匹配 Scratch 分类颜色<br>Three-level color system with preset palettes matching Scratch category colors |
 | **参数管理** / **Argument Management** | 支持 STRING / NUMBER / BOOLEAN / ANGLE / COLOR 等参数类型，可设默认值<br>Supports STRING, NUMBER, BOOLEAN, ANGLE, COLOR and more with default values |
 | **本地存储** / **Local Storage** | 自动保存所有配置和代码，刷新页面不丢失<br>Auto-saves all state and code — survives page refresh |
+| **多语言界面** / **Bilingual UI** | 支持中文 / English 双语切换，点击标题栏右侧按钮即可切换，语言偏好自动保存<br>Switch between Chinese and English via the header button — preference is saved automatically |
 
 <img width="1872" height="995" alt="d0900db8717aa89161508abaa34d6f5b" src="https://github.com/user-attachments/assets/9d886aba-7912-41c9-993a-0be770f321c4" />
 
@@ -120,6 +122,12 @@ LLM_MODEL=gpt-4o-mini
 2. 左下角 **扩展** → **加载自定义扩展** → **文本/URL/文件** / Bottom-left **Extensions** → **Load Custom Extension** → **Text/URL/File**
 3. 粘贴代码或选择下载的 .js 文件 / Paste the code or select the downloaded .js file
 
+### 切换语言 / Switch Language
+
+点击标题栏右侧的 **EN** / **中** 按钮即可在中文和英文之间切换。语言偏好会自动保存到本地存储，下次打开时自动恢复。
+
+Click the **EN** / **中** button on the right side of the header to switch between Chinese and English. Your language preference is saved automatically and restored on your next visit.
+
 ---
 
 ## Project Structure / 项目结构
@@ -128,6 +136,7 @@ LLM_MODEL=gpt-4o-mini
 ├── index.html          # 主页面 / Main page
 ├── style.css           # 样式 / Styles (dark theme)
 ├── app.js              # 前端逻辑 / Frontend logic
+├── i18n.js             # 多语言模块 / Internationalization module (zh/en)
 ├── server.js           # Node.js 代理服务器 / Node.js proxy server (AI API calls)
 ├── package.json        # 依赖配置 / Dependencies
 ├── .env.example        # 环境变量模板 / Environment variable template

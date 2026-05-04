@@ -12,6 +12,8 @@ const state = {
 
 // ==================== Init ====================
 document.addEventListener('DOMContentLoaded', () => {
+  i18n.initLang();
+  i18n.applyTranslations();
   initCodeMirror();
   initTabs();
   initColorSync();
@@ -164,7 +166,7 @@ function initSysParams() {
   document.getElementById('sys-platform').textContent = nav.platform || '-';
   document.getElementById('sys-screen').textContent = `${screen.width}x${screen.height}`;
   document.getElementById('sys-lang').textContent = nav.language || '-';
-  document.getElementById('sys-online').textContent = nav.onLine ? '在线' : '离线';
+  document.getElementById('sys-online').textContent = nav.onLine ? i18n.t('sys.online') : i18n.t('sys.offline');
   document.getElementById('sys-cores').textContent = nav.hardwareConcurrency || '-';
   document.getElementById('sys-memory').textContent = nav.deviceMemory ? `${nav.deviceMemory} GB` : '-';
 }
@@ -196,12 +198,12 @@ async function callAI() {
   const btn = document.getElementById('btn-ai-generate');
   const status = document.getElementById('ai-status');
   const prompt = input.value.trim();
-  if (!prompt) { toast('请输入积木描述'); return; }
+  if (!prompt) { toast(i18n.t('toast.inputDesc')); return; }
 
   btn.disabled = true;
   status.style.display = 'block';
   status.className = 'ai-status loading';
-  status.textContent = '正在生成中，请稍候...';
+  status.textContent = i18n.t('toast.generating');
 
   try {
     const resp = await fetch('/api/generate', {
@@ -237,11 +239,11 @@ async function callAI() {
     saveToLocalStorage();
 
     status.className = 'ai-status success';
-    status.textContent = `生成成功！共 ${state.blocks.length} 个积木`;
+    status.textContent = i18n.t('toast.genSuccess', { n: state.blocks.length });
     setTimeout(() => { status.style.display = 'none'; }, 4000);
   } catch (err) {
     status.className = 'ai-status error';
-    status.textContent = '生成失败: ' + err.message;
+    status.textContent = i18n.t('toast.genFail', { msg: err.message });
   } finally {
     btn.disabled = false;
   }
@@ -269,10 +271,20 @@ function initButtons() {
     const ta = document.getElementById('url-output');
     ta.select();
     document.execCommand('copy');
-    toast('URL 已复制到剪贴板');
+    toast(i18n.t('toast.urlCopied'));
   });
   document.getElementById('btn-close-modal').addEventListener('click', () => {
     document.getElementById('url-modal').style.display = 'none';
+  });
+
+  // Language switcher
+  document.getElementById('btn-lang-switch').addEventListener('click', () => {
+    const newLang = i18n.getLang() === 'zh' ? 'en' : 'zh';
+    i18n.setLang(newLang);
+    // Re-render dynamic content
+    initSysParams();
+    renderBlockList();
+    renderArgs(collectArgs());
   });
 
   document.getElementById('blk-blockType').addEventListener('change', (e) => {
@@ -300,7 +312,7 @@ function initButtons() {
   // Reset ext colors to default
   document.getElementById('btn-ext-color-default').addEventListener('click', () => {
     setExtThreeColors('#4C97FF');
-    toast('已恢复默认颜色');
+    toast(i18n.t('toast.colorReset'));
   });
 }
 
@@ -352,7 +364,7 @@ function closeBlockEditor() {
 
 function saveBlock() {
   const opcode = document.getElementById('blk-opcode').value.trim();
-  if (!opcode) { toast('请填写积木名称'); return; }
+  if (!opcode) { toast(i18n.t('toast.fillOpcode')); return; }
 
   const blk = {
     opcode,
@@ -378,7 +390,7 @@ function saveBlock() {
   closeBlockEditor();
   refreshPreview();
   syncCodeFromState();
-  toast('积木已保存');
+  toast(i18n.t('toast.blockSaved'));
 }
 
 function deleteBlock() {
@@ -389,7 +401,7 @@ function deleteBlock() {
     closeBlockEditor();
     refreshPreview();
     syncCodeFromState();
-    toast('积木已删除');
+    toast(i18n.t('toast.blockDeleted'));
   }
 }
 
@@ -401,13 +413,13 @@ function renderArgs(args) {
     const div = document.createElement('div');
     div.className = 'arg-item';
     div.innerHTML = `
-      <input type="text" class="arg-name" value="${arg.name}" placeholder="参数名">
+      <input type="text" class="arg-name" value="${arg.name}" placeholder="${i18n.t('blockEditor.argName')}">
       <select class="arg-type">
-        <option value="string" ${arg.type==='string'?'selected':''}>字符串</option>
-        <option value="number" ${arg.type==='number'?'selected':''}>数字</option>
-        <option value="boolean" ${arg.type==='boolean'?'selected':''}>布尔</option>
+        <option value="string" ${arg.type==='string'?'selected':''}>${i18n.t('blockEditor.argTypeString')}</option>
+        <option value="number" ${arg.type==='number'?'selected':''}>${i18n.t('blockEditor.argTypeNumber')}</option>
+        <option value="boolean" ${arg.type==='boolean'?'selected':''}>${i18n.t('blockEditor.argTypeBoolean')}</option>
       </select>
-      <input type="text" class="arg-default" value="${arg.defaultValue||''}" placeholder="默认值" style="width:70px">
+      <input type="text" class="arg-default" value="${arg.defaultValue||''}" placeholder="${i18n.t('blockEditor.argDefault')}" style="width:70px">
       <button class="arg-remove" onclick="removeArg(this)">×</button>
     `;
     container.appendChild(div);
@@ -419,13 +431,13 @@ function addArg() {
   const div = document.createElement('div');
   div.className = 'arg-item';
   div.innerHTML = `
-    <input type="text" class="arg-name" value="" placeholder="参数名">
+    <input type="text" class="arg-name" value="" placeholder="${i18n.t('blockEditor.argName')}">
     <select class="arg-type">
-      <option value="string">字符串</option>
-      <option value="number">数字</option>
-      <option value="boolean">布尔</option>
+      <option value="string">${i18n.t('blockEditor.argTypeString')}</option>
+      <option value="number">${i18n.t('blockEditor.argTypeNumber')}</option>
+      <option value="boolean">${i18n.t('blockEditor.argTypeBoolean')}</option>
     </select>
-    <input type="text" class="arg-default" value="" placeholder="默认值" style="width:70px">
+    <input type="text" class="arg-default" value="" placeholder="${i18n.t('blockEditor.argDefault')}" style="width:70px">
     <button class="arg-remove" onclick="removeArg(this)">×</button>
   `;
   container.appendChild(div);
@@ -470,7 +482,7 @@ function renderBlockList() {
 function refreshPreview() {
   const area = document.getElementById('block-preview');
   if (state.blocks.length === 0) {
-    area.innerHTML = '<div class="preview-empty">点击「自动编写」或添加积木后预览</div>';
+    area.innerHTML = `<div class="preview-empty">${i18n.t('preview.empty')}</div>`;
     return;
   }
   area.innerHTML = '';
@@ -623,7 +635,7 @@ function generateMethodCode(blk) {
   const params = (blk.args || []).map(a => a.name).join(', ');
   let body = blk.funcBody || '';
   if (!body.trim()) {
-    body = `        // ${blk.opcode} 的实现`;
+    body = `        // ${blk.opcode}`;
   } else {
     body = body.split('\n').map(line => {
       const trimmed = line.trimStart();
@@ -658,7 +670,7 @@ function autoGenerate() {
   document.querySelector('[data-tab="tab-code"]').classList.add('active');
   document.getElementById('tab-code').classList.add('active');
   setTimeout(() => state.cm.refresh(), 50);
-  toast('代码已自动生成');
+  toast(i18n.t('toast.codeGenerated'));
 }
 
 function syncCodeFromState() {
@@ -676,7 +688,7 @@ function downloadJS() {
   a.download = `${state.extId || 'extension'}.js`;
   a.click();
   URL.revokeObjectURL(url);
-  toast('文件已下载');
+  toast(i18n.t('toast.fileDownloaded'));
 }
 
 // ==================== URL Export/Import ====================
@@ -697,13 +709,13 @@ function exportURL() {
 }
 
 function importFromURL() {
-  const input = prompt('请输入导入 URL 或 JSON 数据：');
+  const input = prompt(i18n.t('prompt.importURL'));
   if (!input) return;
   try {
     loadDataFromURL(input);
-    toast('导入成功');
+    toast(i18n.t('toast.importSuccess'));
   } catch (e) {
-    toast('导入失败：无效的数据');
+    toast(i18n.t('toast.importFail'));
   }
 }
 
@@ -757,13 +769,13 @@ function formatCode() {
   // Ensure file ends with single newline
   code = code.trimEnd() + '\n';
   state.cm.setValue(code);
-  toast('代码已格式化');
+  toast(i18n.t('toast.codeFormatted'));
 }
 
 function copyCode() {
   const code = state.cm.getValue();
   navigator.clipboard.writeText(code).then(() => {
-    toast('代码已复制到剪贴板');
+    toast(i18n.t('toast.codeCopied'));
   }).catch(() => {
     // Fallback
     const ta = document.createElement('textarea');
@@ -772,7 +784,7 @@ function copyCode() {
     ta.select();
     document.execCommand('copy');
     document.body.removeChild(ta);
-    toast('代码已复制到剪贴板');
+    toast(i18n.t('toast.codeCopied'));
   });
 }
 
@@ -780,7 +792,7 @@ function copyCode() {
 function runDebug() {
   const code = state.cm.getValue();
 
-  logDebug('info', '正在执行扩展代码...');
+  logDebug('info', i18n.t('debug.executing'));
 
   // Intercept console.log/warn/error
   const origLog = console.log, origWarn = console.warn, origError = console.error;
@@ -791,8 +803,8 @@ function runDebug() {
   try {
     const mockScratch = {
       extensions: { unsandboxed: true, register: function(ext) {
-        logDebug('success', `扩展 "${ext.getInfo().name}" 注册成功 (ID: ${ext.getInfo().id})`);
-        logDebug('info', `包含 ${ext.getInfo().blocks.length} 个积木`);
+        logDebug('success', i18n.t('debug.registerSuccess', { name: ext.getInfo().name, id: ext.getInfo().id }));
+        logDebug('info', i18n.t('debug.blockCount', { n: ext.getInfo().blocks.length }));
 
         ext.getInfo().blocks.forEach(blk => {
           if (typeof ext[blk.opcode] === 'function') {
@@ -811,12 +823,16 @@ function runDebug() {
                 });
               }
               const result = ext[blk.opcode](args);
-              logDebug('success', `  ✓ ${blk.opcode}() 执行成功${result !== undefined ? ' → ' + result : ''}`);
+              if (result !== undefined) {
+                logDebug('success', i18n.t('debug.execResult', { name: blk.opcode, result: result }));
+              } else {
+                logDebug('success', i18n.t('debug.execSuccess', { name: blk.opcode }));
+              }
             } catch (err) {
-              logDebug('error', `  ✗ ${blk.opcode}() 执行失败: ${err.message}`);
+              logDebug('error', i18n.t('debug.execFail', { name: blk.opcode, msg: err.message }));
             }
           } else {
-            logDebug('warn', `  ! ${blk.opcode} 方法未定义`);
+            logDebug('warn', i18n.t('debug.methodUndefined', { name: blk.opcode }));
           }
         });
       }},
@@ -828,9 +844,9 @@ function runDebug() {
     const wrappedCode = `(function(Scratch) { ${code} })(mockScratch);`;
     const fn = new Function('mockScratch', wrappedCode);
     fn(mockScratch);
-    logDebug('info', '执行完成');
+    logDebug('info', i18n.t('debug.done'));
   } catch (err) {
-    logDebug('error', `执行错误: ${err.message}`);
+    logDebug('error', i18n.t('debug.error', { msg: err.message }));
     if (err.stack) logDebug('error', err.stack);
   } finally {
     console.log = origLog;
