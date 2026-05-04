@@ -7,6 +7,7 @@
 <link rel="stylesheet" href="style.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/monokai.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/hint/show-hint.min.css">
 </head>
 <body>
 <div id="app">
@@ -267,8 +268,21 @@
           <button id="btn-format-code" class="btn btn-sm btn-secondary" data-i18n="code.format">格式化代码</button>
           <button id="btn-copy-code" class="btn btn-sm btn-secondary" data-i18n="code.copy">复制代码</button>
         </div>
-        <div id="code-editor-container">
-          <textarea id="code-editor"></textarea>
+        <div class="code-layout">
+          <!-- Snippets Panel -->
+          <div class="snippets-panel" id="snippets-panel">
+            <div class="snippets-header">
+              <span data-i18n="snippets.title">代码片段</span>
+              <input type="text" id="snippet-search" class="snippet-search" data-i18n-placeholder="snippets.search" placeholder="搜索代码片段...">
+            </div>
+            <div class="snippets-body" id="snippets-body">
+              <!-- Dynamic content -->
+            </div>
+          </div>
+          <!-- Code Editor -->
+          <div id="code-editor-container">
+            <textarea id="code-editor"></textarea>
+          </div>
         </div>
       </div>
 
@@ -514,6 +528,8 @@ Scratch.extensions.register(new MathTools());</code></pre>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/javascript/javascript.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/hint/show-hint.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/hint/javascript-hint.min.js"></script>
 <script src="i18n.js"></script>
 <script src="app.js"></script>
 </body>

@@ -417,6 +417,96 @@ header{
   bottom:0;
 }
 
+/* ========== Code Layout ========== */
+.code-layout{display:flex;flex:1;overflow:hidden}
+
+/* ========== Snippets Panel ========== */
+.snippets-panel{
+  width:280px;min-width:220px;max-width:360px;
+  background:var(--bg2);border-right:1px solid var(--border);
+  display:flex;flex-direction:column;overflow:hidden;
+  flex-shrink:0;
+}
+.snippets-header{
+  padding:8px 10px;border-bottom:1px solid var(--border);
+  font-size:12px;font-weight:600;color:var(--text2);
+  text-transform:uppercase;letter-spacing:.5px;
+  display:flex;flex-direction:column;gap:6px;
+}
+.snippet-search{
+  width:100%;padding:5px 8px;
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius-sm);color:var(--text);font-size:12px;
+}
+.snippet-search:focus{outline:none;border-color:var(--primary)}
+.snippet-search::placeholder{color:var(--text2);opacity:.5}
+.snippets-body{flex:1;overflow-y:auto;padding:6px}
+
+/* Snippet Category */
+.snippet-category{margin-bottom:8px}
+.snippet-cat-title{
+  font-size:11px;font-weight:600;color:var(--accent);
+  padding:4px 8px;text-transform:uppercase;letter-spacing:.3px;
+  display:flex;align-items:center;gap:6px;cursor:pointer;
+  user-select:none;
+}
+.snippet-cat-title:hover{color:var(--text)}
+.snippet-cat-title .cat-count{
+  font-size:10px;color:var(--text2);
+  background:var(--surface);padding:1px 6px;border-radius:8px;
+  font-weight:400;
+}
+.snippet-cat-items{display:flex;flex-direction:column;gap:3px}
+
+/* Snippet Card */
+.snippet-card{
+  padding:6px 8px;background:var(--surface);
+  border-radius:var(--radius-sm);border-left:3px solid var(--primary);
+  cursor:pointer;transition:background .15s;position:relative;
+}
+.snippet-card:hover{background:var(--surface2)}
+.snippet-card-header{display:flex;align-items:center;gap:6px;margin-bottom:3px}
+.snippet-card-name{
+  font-size:12px;font-weight:600;color:var(--text);
+  font-family:'Consolas','Courier New',monospace;
+  flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.snippet-card-type{
+  font-size:9px;padding:1px 5px;border-radius:3px;
+  font-weight:600;text-transform:uppercase;flex-shrink:0;
+  letter-spacing:.3px;
+}
+.snippet-type-command{background:#4C97FF22;color:#4C97FF}
+.snippet-type-reporter{background:#59C05922;color:#59C059}
+.snippet-type-boolean{background:#CF63CF22;color:#CF63CF}
+.snippet-type-hat{background:#FFAB1922;color:#FFAB19}
+.snippet-type-api{background:#5CB1D622;color:#5CB1D6}
+.snippet-type-js{background:#FF8C1A22;color:#FF8C1A}
+.snippet-card-desc{
+  font-size:11px;color:var(--text2);line-height:1.4;
+  margin-bottom:3px;
+}
+.snippet-card-meta{
+  display:flex;gap:6px;flex-wrap:wrap;
+}
+.snippet-meta-tag{
+  font-size:10px;padding:1px 5px;border-radius:3px;
+  background:var(--bg);color:var(--text2);
+}
+.snippet-meta-tag.return-yes{background:#59C05915;color:#59C059}
+.snippet-meta-tag.return-no{background:#FF668015;color:#FF6680}
+.snippet-meta-tag.has-params{background:#4C97FF15;color:#4C97FF}
+.snippet-meta-tag.no-params{background:var(--bg);color:var(--text2);opacity:.6}
+.snippet-copy-btn{
+  position:absolute;top:6px;right:6px;
+  width:22px;height:22px;display:flex;align-items:center;justify-content:center;
+  background:var(--bg);border:1px solid var(--border);
+  border-radius:var(--radius-sm);color:var(--text2);
+  font-size:11px;cursor:pointer;transition:all .15s;opacity:0;
+}
+.snippet-card:hover .snippet-copy-btn{opacity:1}
+.snippet-copy-btn:hover{background:var(--primary);color:#fff;border-color:var(--primary)}
+
 /* ========== Code Editor ========== */
 #code-editor-container{flex:1;overflow:hidden}
 #code-editor-container .CodeMirror{
@@ -540,3 +630,24 @@ header{
   color:var(--text);font-size:12px;font-family:monospace;
 }
 .modal-actions{display:flex;gap:8px;margin-top:12px;justify-content:flex-end}
+
+/* ========== CodeMirror Hints (Autocomplete) ========== */
+.CodeMirror-hints{
+  background:var(--bg2)!important;
+  border:1px solid var(--border)!important;
+  border-radius:var(--radius-sm)!important;
+  box-shadow:0 4px 16px rgba(0,0,0,.4)!important;
+  font-family:'Consolas','Courier New',monospace!important;
+  font-size:12px!important;
+  max-height:200px!important;
+  z-index:9999!important;
+}
+.CodeMirror-hint{
+  color:var(--text)!important;
+  padding:3px 8px!important;
+  border-radius:2px!important;
+}
+.CodeMirror-hint-active{
+  background:var(--primary)!important;
+  color:#fff!important;
+}

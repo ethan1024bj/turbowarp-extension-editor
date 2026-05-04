@@ -46,6 +46,8 @@ I am 9 , a primary student. I like the TurboWarp especially custom extension fun
 | **参数管理** / **Argument Management** | 支持 STRING / NUMBER / BOOLEAN / ANGLE / COLOR 等参数类型，可设默认值<br>Supports STRING, NUMBER, BOOLEAN, ANGLE, COLOR and more with default values |
 | **本地存储** / **Local Storage** | 自动保存所有配置和代码，刷新页面不丢失<br>Auto-saves all state and code — survives page refresh |
 | **多语言界面** / **Bilingual UI** | 支持中文 / English 双语切换，点击标题栏右侧按钮即可切换，语言偏好自动保存<br>Switch between Chinese and English via the header button — preference is saved automatically |
+| **代码片段库** / **Code Snippets Library** | 代码编辑界面左侧提供完整代码片段库，包含扩展积木、Scratch API 和 JavaScript 内置方法三大分类。每个片段显示代码类型、返回值类型、参数信息和功能说明，支持搜索过滤和一键复制<br>Left panel in code editor with Extension Blocks, Scratch API, and JS built-in snippets. Each shows type, return value, params, and description. Supports search filtering and one-click copy |
+| **代码补全** / **Code Autocomplete** | CodeMirror 编辑器内置智能代码补全，输入 `.` 或按 `Ctrl+Space` 触发。支持 Scratch API、用户自定义积木和 JavaScript 关键词补全<br>Built-in intelligent autocomplete in the editor. Trigger with `.` or `Ctrl+Space`. Supports Scratch API, user block opcodes, and JavaScript keyword completion |
 
 <img width="1872" height="995" alt="d0900db8717aa89161508abaa34d6f5b" src="https://github.com/user-attachments/assets/9d886aba-7912-41c9-993a-0be770f321c4" />
 <p align="center">中文界面</p>
@@ -127,6 +129,38 @@ LLM_MODEL=gpt-4o-mini
 2. 左下角 **扩展** → **加载自定义扩展** → **文本/URL/文件** / Bottom-left **Extensions** → **Load Custom Extension** → **Text/URL/File**
 3. 粘贴代码或选择下载的 .js 文件 / Paste the code or select the downloaded .js file
 
+### 代码片段库 / Code Snippets Library
+
+切换到 **代码编辑** 标签页，左侧面板显示完整的代码片段库，分三大类：
+
+Switch to the **Code Editor** tab. The left panel shows a complete snippets library in three categories:
+
+- **扩展积木 / Extension Blocks** — 你创建的所有积木，显示代码类型、返回值、参数等信息
+  All blocks you've created, with type, return value, and parameter info
+- **Scratch API** — `Scratch.BlockType.*`、`Scratch.ArgumentType.*`、`Scratch.vm.runtime.*` 等常用 API
+  Common APIs like `Scratch.BlockType.*`, `Scratch.ArgumentType.*`, `Scratch.vm.runtime.*`
+- **JavaScript** — `Math.*`、`JSON.*`、`console.*`、`fetch` 等内置方法
+  Built-in methods like `Math.*`, `JSON.*`, `console.*`, `fetch`
+
+每个片段卡片显示：代码类型标签、功能说明、是否有返回值（及类型）、是否有参数。点击卡片直接插入代码到编辑器，点击 📋 按钮复制单个代码片段。
+
+Each snippet card shows: type badge, description, return value (and type), and parameters. Click a card to insert code into the editor, or click 📋 to copy a single snippet.
+
+### 代码补全 / Code Autocomplete
+
+在代码编辑器中输入代码时，编辑器会自动提供补全建议：
+
+The editor provides intelligent autocomplete suggestions as you type:
+
+- 输入 `Scratch.` 自动弹出所有 Scratch API 补全列表
+  Type `Scratch.` to see all Scratch API completions
+- 输入 `.` 或 `[` 自动触发补全
+  Type `.` or `[` to trigger autocomplete
+- 按 `Ctrl+Space` 手动触发补全
+  Press `Ctrl+Space` to manually trigger autocomplete
+- 补全列表包含：Scratch API、用户自定义积木名称、JavaScript 关键词
+  Completions include: Scratch API, user block names, and JavaScript keywords
+
 ### 切换语言 / Switch Language
 
 点击标题栏右侧的 **EN** / **中** 按钮即可在中文和英文之间切换。语言偏好会自动保存到本地存储，下次打开时自动恢复。
@@ -157,6 +191,7 @@ Click the **EN** / **中** button on the right side of the header to switch betw
 | `Ctrl+Enter` | AI 生成 / AI Generate |
 | `Ctrl+S` | 下载 .js 文件 / Download .js file |
 | `Ctrl+Shift+C` | 复制代码 / Copy code |
+| `Ctrl+Space` | 触发代码补全 / Trigger autocomplete |
 | `Escape` | 关闭弹窗 / Close popup |
 
 ---

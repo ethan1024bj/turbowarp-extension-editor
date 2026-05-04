@@ -24,6 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initImportFromURL();
   loadFromLocalStorage();
   renderBlockList();
+  renderSnippets();
   refreshPreview();
   syncCodeFromState();
 });
@@ -64,11 +65,13 @@ function initCodeMirror() {
     indentWithTabs: false,
     lineWrapping: true,
     matchBrackets: true,
-    autoCloseBrackets: true
+    autoCloseBrackets: true,
+    extraKeys: { 'Ctrl-Space': 'autocomplete' }
   });
   state.cm.on('change', () => {
     saveToLocalStorage();
   });
+  initAutocomplete();
 }
 
 // ==================== Tabs ====================
@@ -234,6 +237,7 @@ async function callAI() {
     document.getElementById('ext-color3').value = state.extColor3;
 
     renderBlockList();
+    renderSnippets();
     refreshPreview();
     syncCodeFromState();
     saveToLocalStorage();
@@ -284,6 +288,7 @@ function initButtons() {
     // Re-render dynamic content
     initSysParams();
     renderBlockList();
+    renderSnippets();
     renderArgs(collectArgs());
   });
 
@@ -387,6 +392,7 @@ function saveBlock() {
 
   saveToLocalStorage();
   renderBlockList();
+  renderSnippets();
   closeBlockEditor();
   refreshPreview();
   syncCodeFromState();
@@ -398,6 +404,7 @@ function deleteBlock() {
     state.blocks.splice(state.editingIndex, 1);
     saveToLocalStorage();
     renderBlockList();
+    renderSnippets();
     closeBlockEditor();
     refreshPreview();
     syncCodeFromState();
@@ -862,6 +869,319 @@ function logDebug(type, msg) {
   line.textContent = msg;
   output.appendChild(line);
   output.scrollTop = output.scrollHeight;
+}
+
+// ==================== Code Snippets ====================
+const scratchAPISnippets = [
+  // BlockType
+  { category: 'api', code: 'Scratch.BlockType.COMMAND', desc_zh: '指令块 - 执行操作，无返回值', desc_en: 'Command block - executes action, no return', type: 'COMMAND', hasReturn: false, returnType: '—', hasParams: false },
+  { category: 'api', code: 'Scratch.BlockType.REPORTER', desc_zh: '返回值块 - 返回字符串或数字', desc_en: 'Reporter block - returns string/number', type: 'REPORTER', hasReturn: true, returnType: 'string/number', hasParams: false },
+  { category: 'api', code: 'Scratch.BlockType.BOOLEAN', desc_zh: '布尔块 - 返回 true 或 false', desc_en: 'Boolean block - returns true/false', type: 'BOOLEAN', hasReturn: true, returnType: 'boolean', hasParams: false },
+  { category: 'api', code: 'Scratch.BlockType.HAT', desc_zh: '帽子块 - 事件触发', desc_en: 'Hat block - event trigger', type: 'HAT', hasReturn: false, returnType: '—', hasParams: false },
+  { category: 'api', code: 'Scratch.BlockType.CONDITIONAL', desc_zh: '条件块 - 包含子栈', desc_en: 'Conditional block - contains substack', type: 'CONDITIONAL', hasReturn: false, returnType: '—', hasParams: false },
+  { category: 'api', code: 'Scratch.BlockType.LOOP', desc_zh: '循环块 - 包含子栈', desc_en: 'Loop block - contains substack', type: 'LOOP', hasReturn: false, returnType: '—', hasParams: false },
+  { category: 'api', code: 'Scratch.BlockType.BUTTON', desc_zh: '按钮 - 点击触发回调', desc_en: 'Button - click to trigger callback', type: 'BUTTON', hasReturn: false, returnType: '—', hasParams: false },
+
+  // ArgumentType
+  { category: 'api', code: 'Scratch.ArgumentType.STRING', desc_zh: '字符串输入框', desc_en: 'String input field', type: 'API', hasReturn: false, returnType: '—', hasParams: false },
+  { category: 'api', code: 'Scratch.ArgumentType.NUMBER', desc_zh: '数字输入框', desc_en: 'Number input field', type: 'API', hasReturn: false, returnType: '—', hasParams: false },
+  { category: 'api', code: 'Scratch.ArgumentType.BOOLEAN', desc_zh: '布尔判断（六边形）', desc_en: 'Boolean check (hexagon)', type: 'API', hasReturn: false, returnType: '—', hasParams: false },
+  { category: 'api', code: 'Scratch.ArgumentType.ANGLE', desc_zh: '角度选择器', desc_en: 'Angle picker', type: 'API', hasReturn: false, returnType: '—', hasParams: false },
+  { category: 'api', code: 'Scratch.ArgumentType.COLOR', desc_zh: '颜色选择器', desc_en: 'Color picker', type: 'API', hasReturn: false, returnType: '—', hasParams: false },
+  { category: 'api', code: 'Scratch.ArgumentType.IMAGE', desc_zh: '图片数据（需 dataURI）', desc_en: 'Image data (requires dataURI)', type: 'API', hasReturn: false, returnType: '—', hasParams: false },
+  { category: 'api', code: 'Scratch.ArgumentType.MATRIX', desc_zh: '矩阵编辑器', desc_en: 'Matrix editor', type: 'API', hasReturn: false, returnType: '—', hasParams: false },
+  { category: 'api', code: 'Scratch.ArgumentType.NOTE', desc_zh: '音符选择器', desc_en: 'Note picker', type: 'API', hasReturn: false, returnType: '—', hasParams: false },
+
+  // Runtime API
+  { category: 'api', code: 'Scratch.vm.runtime.targets[0].x', desc_zh: '获取角色 X 坐标', desc_en: 'Get sprite X position', type: 'API', hasReturn: true, returnType: 'number', hasParams: false },
+  { category: 'api', code: 'Scratch.vm.runtime.targets[0].y', desc_zh: '获取角色 Y 坐标', desc_en: 'Get sprite Y position', type: 'API', hasReturn: true, returnType: 'number', hasParams: false },
+  { category: 'api', code: 'Scratch.vm.runtime.targets[0].direction', desc_zh: '获取角色方向', desc_en: 'Get sprite direction', type: 'API', hasReturn: true, returnType: 'number', hasParams: false },
+  { category: 'api', code: 'Scratch.vm.runtime.targets[0].setVisible(false)', desc_zh: '隐藏角色', desc_en: 'Hide sprite', type: 'API', hasReturn: false, returnType: '—', hasParams: false },
+  { category: 'api', code: 'Scratch.vm.runtime.ioDevices.clock.projectTimer()', desc_zh: '获取项目计时器', desc_en: 'Get project timer', type: 'API', hasReturn: true, returnType: 'number', hasParams: false },
+  { category: 'api', code: "Scratch.vm.runtime.ioDevices.keyboard.isKeyDown('space')", desc_zh: '检测键盘按键是否按下', desc_en: 'Check if key is pressed', type: 'API', hasReturn: true, returnType: 'boolean', hasParams: false },
+  { category: 'api', code: "Scratch.vm.runtime.ioDevices.cloud.requestUpdateVariable('var', 123)", desc_zh: '发送云变量消息', desc_en: 'Send cloud variable message', type: 'API', hasReturn: false, returnType: '—', hasParams: true },
+  { category: 'api', code: 'Scratch.extensions.unsandboxed', desc_zh: '检查是否为非沙盒模式', desc_en: 'Check if unsandboxed mode', type: 'API', hasReturn: true, returnType: 'boolean', hasParams: false },
+  { category: 'api', code: 'Scratch.extensions.register(new MyExtension())', desc_zh: '注册扩展实例', desc_en: 'Register extension instance', type: 'API', hasReturn: false, returnType: '—', hasParams: true },
+];
+
+const jsSnippets = [
+  { category: 'js', code: "console.log()", desc_zh: '输出日志到控制台', desc_en: 'Log to console', type: 'JS', hasReturn: false, returnType: '—', hasParams: true },
+  { category: 'js', code: "console.warn()", desc_zh: '输出警告信息', desc_en: 'Log warning', type: 'JS', hasReturn: false, returnType: '—', hasParams: true },
+  { category: 'js', code: "console.error()", desc_zh: '输出错误信息', desc_en: 'Log error', type: 'JS', hasReturn: false, returnType: '—', hasParams: true },
+  { category: 'js', code: "JSON.parse()", desc_zh: '解析 JSON 字符串', desc_en: 'Parse JSON string', type: 'JS', hasReturn: true, returnType: 'object', hasParams: true },
+  { category: 'js', code: "JSON.stringify()", desc_zh: '对象转 JSON 字符串', desc_en: 'Object to JSON string', type: 'JS', hasReturn: true, returnType: 'string', hasParams: true },
+  { category: 'js', code: "Number()", desc_zh: '转换为数字', desc_en: 'Convert to number', type: 'JS', hasReturn: true, returnType: 'number', hasParams: true },
+  { category: 'js', code: "String()", desc_zh: '转换为字符串', desc_en: 'Convert to string', type: 'JS', hasReturn: true, returnType: 'string', hasParams: true },
+  { category: 'js', code: "parseInt()", desc_zh: '解析整数', desc_en: 'Parse integer', type: 'JS', hasReturn: true, returnType: 'number', hasParams: true },
+  { category: 'js', code: "parseFloat()", desc_zh: '解析浮点数', desc_en: 'Parse float', type: 'JS', hasReturn: true, returnType: 'number', hasParams: true },
+  { category: 'js', code: "Math.random()", desc_zh: '生成 0~1 随机数', desc_en: 'Random number 0-1', type: 'JS', hasReturn: true, returnType: 'number', hasParams: false },
+  { category: 'js', code: "Math.floor()", desc_zh: '向下取整', desc_en: 'Floor (round down)', type: 'JS', hasReturn: true, returnType: 'number', hasParams: true },
+  { category: 'js', code: "Math.round()", desc_zh: '四舍五入', desc_en: 'Round to nearest', type: 'JS', hasReturn: true, returnType: 'number', hasParams: true },
+  { category: 'js', code: "Math.max()", desc_zh: '取最大值', desc_en: 'Get maximum value', type: 'JS', hasReturn: true, returnType: 'number', hasParams: true },
+  { category: 'js', code: "Math.min()", desc_zh: '取最小值', desc_en: 'Get minimum value', type: 'JS', hasReturn: true, returnType: 'number', hasParams: true },
+  { category: 'js', code: "Math.abs()", desc_zh: '取绝对值', desc_en: 'Get absolute value', type: 'JS', hasReturn: true, returnType: 'number', hasParams: true },
+  { category: 'js', code: "Date.now()", desc_zh: '获取当前时间戳（毫秒）', desc_en: 'Get current timestamp (ms)', type: 'JS', hasReturn: true, returnType: 'number', hasParams: false },
+  { category: 'js', code: "setTimeout(() => {}, 1000)", desc_zh: '延时执行（毫秒）', desc_en: 'Delayed execution (ms)', type: 'JS', hasReturn: false, returnType: '—', hasParams: true },
+  { category: 'js', code: "setInterval(() => {}, 1000)", desc_zh: '定时循环执行（毫秒）', desc_en: 'Interval execution (ms)', type: 'JS', hasReturn: false, returnType: '—', hasParams: true },
+  { category: 'js', code: "fetch(url)", desc_zh: '发起网络请求', desc_en: 'Make network request', type: 'JS', hasReturn: true, returnType: 'Promise', hasParams: true },
+  { category: 'js', code: "Array.isArray()", desc_zh: '判断是否为数组', desc_en: 'Check if array', type: 'JS', hasReturn: true, returnType: 'boolean', hasParams: true },
+];
+
+function getExtBlockSnippets() {
+  return state.blocks.map(blk => {
+    const typeShort = blk.blockType.split('.').pop();
+    const hasReturn = typeShort === 'REPORTER' || typeShort === 'BOOLEAN';
+    const returnType = typeShort === 'REPORTER' ? 'string/number' : typeShort === 'BOOLEAN' ? 'boolean' : '—';
+    const args = blk.args || [];
+    const params = args.map(a => a.name).join(', ');
+    const code = params ? `${blk.opcode}({${params}})` : `${blk.opcode}()`;
+    return {
+      category: 'block',
+      code,
+      desc_zh: `${blk.text || blk.opcode} (${typeShort})`,
+      desc_en: `${blk.text || blk.opcode} (${typeShort})`,
+      type: typeShort,
+      hasReturn,
+      returnType,
+      hasParams: args.length > 0,
+      params,
+      funcBody: blk.funcBody || '',
+      returnExpr: blk.returnExpr || ''
+    };
+  });
+}
+
+function renderSnippets() {
+  const body = document.getElementById('snippets-body');
+  if (!body) return;
+  body.innerHTML = '';
+
+  const lang = i18n.getLang();
+  const searchVal = (document.getElementById('snippet-search')?.value || '').toLowerCase();
+
+  // Extension blocks
+  const extSnippets = getExtBlockSnippets();
+  renderSnippetCategory(body, i18n.t('snippets.extBlocks'), extSnippets, lang, searchVal, 'block');
+
+  // Scratch API
+  renderSnippetCategory(body, i18n.t('snippets.scratchAPI'), scratchAPISnippets, lang, searchVal, 'api');
+
+  // JS Builtins
+  renderSnippetCategory(body, i18n.t('snippets.jsBuiltins'), jsSnippets, lang, searchVal, 'js');
+}
+
+function renderSnippetCategory(container, title, snippets, lang, searchVal, catType) {
+  const filtered = snippets.filter(s => {
+    if (!searchVal) return true;
+    const desc = lang === 'en' ? s.desc_en : s.desc_zh;
+    return s.code.toLowerCase().includes(searchVal) ||
+           desc.toLowerCase().includes(searchVal) ||
+           (s.type || '').toLowerCase().includes(searchVal);
+  });
+
+  if (filtered.length === 0 && searchVal) return;
+
+  const catDiv = document.createElement('div');
+  catDiv.className = 'snippet-category';
+
+  const catTitle = document.createElement('div');
+  catTitle.className = 'snippet-cat-title';
+  catTitle.innerHTML = `${title} <span class="cat-count">${filtered.length}</span>`;
+  catTitle.addEventListener('click', () => {
+    const items = catDiv.querySelector('.snippet-cat-items');
+    items.style.display = items.style.display === 'none' ? 'flex' : 'none';
+  });
+  catDiv.appendChild(catTitle);
+
+  const itemsDiv = document.createElement('div');
+  itemsDiv.className = 'snippet-cat-items';
+
+  if (filtered.length === 0 && catType === 'block') {
+    const empty = document.createElement('div');
+    empty.className = 'snippet-card-desc';
+    empty.style.padding = '8px';
+    empty.textContent = i18n.t('snippets.noBlocks');
+    itemsDiv.appendChild(empty);
+  }
+
+  filtered.forEach(s => {
+    const card = document.createElement('div');
+    card.className = 'snippet-card';
+    const typeClass = 'snippet-type-' + (catType === 'block' ? s.type.toLowerCase() : catType);
+    const desc = lang === 'en' ? s.desc_en : s.desc_zh;
+    const paramTag = s.hasParams
+      ? `<span class="snippet-meta-tag has-params">${i18n.t('snippets.params')}</span>`
+      : `<span class="snippet-meta-tag no-params">${i18n.t('snippets.noParams')}</span>`;
+    const returnTag = s.hasReturn
+      ? `<span class="snippet-meta-tag return-yes">${i18n.t('snippets.return')}: ${s.returnType}</span>`
+      : `<span class="snippet-meta-tag return-no">${i18n.t('snippets.noReturn')}</span>`;
+
+    card.innerHTML = `
+      <div class="snippet-card-header">
+        <span class="snippet-card-name">${escapeHTML(s.code)}</span>
+        <span class="snippet-card-type ${typeClass}">${s.type}</span>
+      </div>
+      <div class="snippet-card-desc">${escapeHTML(desc)}</div>
+      <div class="snippet-card-meta">
+        ${returnTag}${paramTag}
+      </div>
+      <button class="snippet-copy-btn" title="${i18n.t('snippets.copy')}">📋</button>
+    `;
+
+    card.querySelector('.snippet-copy-btn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      copySnippet(s.code, e.currentTarget);
+    });
+
+    card.addEventListener('click', () => {
+      // Insert code at cursor in CodeMirror
+      const cm = state.cm;
+      if (cm) {
+        cm.replaceSelection(s.code);
+        cm.focus();
+      }
+    });
+
+    itemsDiv.appendChild(card);
+  });
+
+  catDiv.appendChild(itemsDiv);
+  container.appendChild(catDiv);
+}
+
+function copySnippet(code, btn) {
+  navigator.clipboard.writeText(code).then(() => {
+    toast(i18n.t('toast.snippetCopied'));
+    if (btn) {
+      const orig = btn.textContent;
+      btn.textContent = '✓';
+      setTimeout(() => { btn.textContent = orig; }, 1000);
+    }
+  }).catch(() => {
+    const ta = document.createElement('textarea');
+    ta.value = code;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    toast(i18n.t('toast.snippetCopied'));
+  });
+}
+
+function escapeHTML(str) {
+  return (str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+// ==================== Autocomplete ====================
+function initAutocomplete() {
+  const cm = state.cm;
+
+  // Custom Scratch + user hints
+  const scratchCompletions = [
+    'Scratch.BlockType.COMMAND', 'Scratch.BlockType.REPORTER', 'Scratch.BlockType.BOOLEAN',
+    'Scratch.BlockType.HAT', 'Scratch.BlockType.CONDITIONAL', 'Scratch.BlockType.LOOP', 'Scratch.BlockType.BUTTON',
+    'Scratch.ArgumentType.STRING', 'Scratch.ArgumentType.NUMBER', 'Scratch.ArgumentType.BOOLEAN',
+    'Scratch.ArgumentType.ANGLE', 'Scratch.ArgumentType.COLOR', 'Scratch.ArgumentType.IMAGE',
+    'Scratch.ArgumentType.MATRIX', 'Scratch.ArgumentType.NOTE',
+    'Scratch.extensions.register', 'Scratch.extensions.unsandboxed',
+    'Scratch.vm.runtime.targets', 'Scratch.vm.runtime.ioDevices',
+    'Scratch.vm.runtime.ioDevices.clock.projectTimer',
+    'Scratch.vm.runtime.ioDevices.keyboard.isKeyDown',
+    'Scratch.vm.runtime.ioDevices.cloud.requestUpdateVariable',
+  ];
+
+  CodeMirror.registerHelper('hint', 'javascript', function(editor) {
+    const cur = editor.getCursor();
+    const token = editor.getTokenAt(cur);
+    let start = token.start;
+    let end = cur.ch;
+    let line = token.string;
+
+    // Determine what the user is typing
+    const text = editor.getLine(cur.line);
+    const beforeCursor = text.slice(0, cur.ch);
+
+    // Get the word being typed
+    const wordMatch = beforeCursor.match(/[\w$.]+$/);
+    const word = wordMatch ? wordMatch[0] : '';
+
+    if (word.length < 1 && !beforeCursor.endsWith('.')) return;
+
+    const wordStart = cur.ch - word.length;
+
+    // Build list of completions
+    let completions = [];
+
+    // Scratch API completions
+    scratchCompletions.forEach(c => {
+      if (!word || c.toLowerCase().includes(word.toLowerCase())) {
+        completions.push({ text: c, displayText: c });
+      }
+    });
+
+    // User block opcodes
+    state.blocks.forEach(blk => {
+      const name = blk.opcode;
+      if (!word || name.toLowerCase().includes(word.toLowerCase())) {
+        completions.push({ text: name, displayText: name + ' (block)' });
+      }
+    });
+
+    // Standard JS keywords
+    const jsKeywords = [
+      'function', 'return', 'const', 'let', 'var', 'if', 'else', 'for', 'while',
+      'do', 'switch', 'case', 'break', 'continue', 'new', 'this', 'class',
+      'extends', 'super', 'import', 'export', 'default', 'try', 'catch',
+      'finally', 'throw', 'typeof', 'instanceof', 'void', 'delete',
+      'true', 'false', 'null', 'undefined', 'NaN', 'Infinity',
+      'console', 'Math', 'JSON', 'Array', 'Object', 'String', 'Number',
+      'Boolean', 'Date', 'Promise', 'Map', 'Set', 'RegExp', 'Error',
+      'parseInt', 'parseFloat', 'isNaN', 'isFinite', 'encodeURI', 'decodeURI',
+      'setTimeout', 'setInterval', 'clearTimeout', 'clearInterval', 'fetch',
+    ];
+    jsKeywords.forEach(k => {
+      if (!word || k.toLowerCase().startsWith(word.toLowerCase())) {
+        completions.push({ text: k, displayText: k });
+      }
+    });
+
+    // Filter to only match what user typed
+    if (word) {
+      completions = completions.filter(c =>
+        c.displayText.toLowerCase().includes(word.toLowerCase())
+      );
+    }
+
+    // Deduplicate
+    const seen = new Set();
+    completions = completions.filter(c => {
+      if (seen.has(c.text)) return false;
+      seen.add(c.text);
+      return true;
+    });
+
+    return {
+      list: completions.slice(0, 50),
+      from: CodeMirror.Pos(cur.line, wordStart),
+      to: CodeMirror.Pos(cur.line, end)
+    };
+  });
+
+  // Auto-trigger on dot and [
+  cm.on('inputRead', function(editor, changeObj) {
+    if (changeObj.origin === '+input') {
+      const ch = changeObj.text[0];
+      if (ch === '.' || ch === '[') {
+        editor.showHint({ completeSingle: false });
+      }
+    }
+  });
+
+  // Search filter for snippets panel
+  const searchInput = document.getElementById('snippet-search');
+  if (searchInput) {
+    searchInput.addEventListener('input', () => renderSnippets());
+  }
 }
 
 // ==================== Toast ====================

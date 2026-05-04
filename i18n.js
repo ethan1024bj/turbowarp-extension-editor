@@ -124,6 +124,21 @@
       'toast.codeFormatted': '代码已格式化',
       'toast.codeCopied': '代码已复制到剪贴板',
       'toast.fillOpcode': '请填写积木名称',
+      'toast.snippetCopied': '代码片段已复制',
+
+      // Snippets
+      'snippets.title': '代码片段',
+      'snippets.search': '搜索代码片段...',
+      'snippets.extBlocks': '扩展积木',
+      'snippets.scratchAPI': 'Scratch API',
+      'snippets.jsBuiltins': 'JavaScript',
+      'snippets.noBlocks': '暂无积木，请先添加或生成积木',
+      'snippets.return': '返回值',
+      'snippets.noReturn': '无返回值',
+      'snippets.params': '参数',
+      'snippets.noParams': '无参数',
+      'snippets.copy': '复制',
+      'snippets.copied': '已复制',
 
       // Debug messages
       'debug.executing': '正在执行扩展代码...',
@@ -321,6 +336,21 @@
       'toast.codeFormatted': 'Code formatted',
       'toast.codeCopied': 'Code copied to clipboard',
       'toast.fillOpcode': 'Please fill in the block name',
+      'toast.snippetCopied': 'Snippet copied',
+
+      // Snippets
+      'snippets.title': 'Code Snippets',
+      'snippets.search': 'Search snippets...',
+      'snippets.extBlocks': 'Extension Blocks',
+      'snippets.scratchAPI': 'Scratch API',
+      'snippets.jsBuiltins': 'JavaScript',
+      'snippets.noBlocks': 'No blocks yet. Add or generate blocks first',
+      'snippets.return': 'Return',
+      'snippets.noReturn': 'No return',
+      'snippets.params': 'Params',
+      'snippets.noParams': 'No params',
+      'snippets.copy': 'Copy',
+      'snippets.copied': 'Copied',
 
       // Debug messages
       'debug.executing': 'Executing extension code...',
