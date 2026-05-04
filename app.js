@@ -2,6 +2,9 @@
 const state = {
   extId: 'myextension',
   extName: 'My Extension',
+  extColor1: '#4C97FF',
+  extColor2: '#3373CC',
+  extColor3: '#295FA8',
   blocks: [],
   editingIndex: -1,
   cm: null
@@ -83,32 +86,76 @@ function initTabs() {
 
 // ==================== Color Sync ====================
 function initColorSync() {
-  const picker = document.getElementById('blk-color-picker');
-  const textInput = document.getElementById('blk-color');
-  const preview = document.getElementById('blk-color-preview');
+  const levels = ['color1', 'color2', 'color3'];
+  const defaultColors = { color1: '#4C97FF', color2: '#3373CC', color3: '#295FA8' };
 
-  function updateFromPicker() {
-    textInput.value = `/*${picker.value}*/`;
-    preview.style.background = picker.value;
-  }
-  function updateFromText() {
-    const match = textInput.value.match(/#[0-9a-fA-F]{6}/);
-    if (match) {
-      picker.value = match[0];
-      preview.style.background = match[0];
-    }
-  }
-  picker.addEventListener('input', updateFromPicker);
-  textInput.addEventListener('input', updateFromText);
-  updateFromText();
+  levels.forEach(level => {
+    const picker = document.getElementById(`blk-${level}-picker`);
+    const textInput = document.getElementById(`blk-${level}`);
+    const preview = document.getElementById(`blk-${level}-preview`);
+
+    picker.addEventListener('input', () => {
+      textInput.value = picker.value.toUpperCase();
+      preview.style.background = picker.value;
+    });
+    textInput.addEventListener('input', () => {
+      const match = textInput.value.match(/#[0-9a-fA-F]{6}/i);
+      if (match) {
+        picker.value = match[0];
+        preview.style.background = match[0];
+      }
+    });
+  });
 
   document.querySelectorAll('.color-preset').forEach(btn => {
     btn.addEventListener('click', () => {
-      const color = btn.dataset.color;
-      picker.value = color;
-      updateFromPicker();
+      const base = btn.dataset.color;
+      setThreeColors(base);
     });
   });
+}
+
+function setThreeColors(baseColor) {
+  const hex = baseColor.replace('#', '');
+  const r = parseInt(hex.substring(0, 2), 16);
+  const g = parseInt(hex.substring(2, 4), 16);
+  const b = parseInt(hex.substring(4, 6), 16);
+
+  const color1 = baseColor.toUpperCase();
+  const color2 = darken(r, g, b, 0.8);
+  const color3 = darken(r, g, b, 0.6);
+
+  ['color1', 'color2', 'color3'].forEach((level, i) => {
+    const c = [color1, color2, color3][i];
+    document.getElementById(`blk-${level}-picker`).value = c;
+    document.getElementById(`blk-${level}`).value = c;
+    document.getElementById(`blk-${level}-preview`).style.background = c;
+  });
+}
+
+function darken(r, g, b, factor) {
+  const nr = Math.round(r * factor);
+  const ng = Math.round(g * factor);
+  const nb = Math.round(b * factor);
+  return '#' + [nr, ng, nb].map(v => v.toString(16).padStart(2, '0')).join('').toUpperCase();
+}
+
+function setExtThreeColors(baseColor) {
+  const hex = baseColor.replace('#', '');
+  const r = parseInt(hex.substring(0, 2), 16);
+  const g = parseInt(hex.substring(2, 4), 16);
+  const b = parseInt(hex.substring(4, 6), 16);
+
+  const color1 = baseColor.toUpperCase();
+  const color2 = darken(r, g, b, 0.8);
+  const color3 = darken(r, g, b, 0.6);
+
+  ['ext-color1', 'ext-color2', 'ext-color3'].forEach((id, i) => {
+    const c = [color1, color2, color3][i];
+    document.getElementById(id).value = c;
+    state[id.replace('-', '')] = c;
+  });
+  saveToLocalStorage();
 }
 
 // ==================== System Params ====================
@@ -173,10 +220,16 @@ async function callAI() {
     // Apply to state
     state.extId = data.extId || state.extId;
     state.extName = data.extName || state.extName;
+    state.extColor1 = data.extColor1 || state.extColor1;
+    state.extColor2 = data.extColor2 || state.extColor2;
+    state.extColor3 = data.extColor3 || state.extColor3;
     state.blocks = data.blocks || [];
 
     document.getElementById('ext-id').value = state.extId;
     document.getElementById('ext-name').value = state.extName;
+    document.getElementById('ext-color1').value = state.extColor1;
+    document.getElementById('ext-color2').value = state.extColor2;
+    document.getElementById('ext-color3').value = state.extColor3;
 
     renderBlockList();
     refreshPreview();
@@ -229,6 +282,26 @@ function initButtons() {
 
   document.getElementById('ext-id').addEventListener('input', (e) => { state.extId = e.target.value; saveToLocalStorage(); });
   document.getElementById('ext-name').addEventListener('input', (e) => { state.extName = e.target.value; saveToLocalStorage(); });
+  ['ext-color1', 'ext-color2', 'ext-color3'].forEach(id => {
+    document.getElementById(id).addEventListener('input', (e) => {
+      state[id.replace('-', '')] = e.target.value.toUpperCase();
+      saveToLocalStorage();
+    });
+  });
+
+  // Extension color presets
+  document.querySelectorAll('.ext-color-preset').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const base = btn.dataset.color;
+      setExtThreeColors(base);
+    });
+  });
+
+  // Reset ext colors to default
+  document.getElementById('btn-ext-color-default').addEventListener('click', () => {
+    setExtThreeColors('#4C97FF');
+    toast('已恢复默认颜色');
+  });
 }
 
 // ==================== Block Editor ====================
@@ -242,29 +315,32 @@ function openBlockEditor(index) {
     document.getElementById('blk-opcode').value = blk.opcode;
     document.getElementById('blk-blockType').value = blk.blockType;
     document.getElementById('blk-text').value = blk.text;
-    document.getElementById('blk-color').value = blk.color || '/*#4C97FF*/';
     document.getElementById('blk-isEdgeActivated').checked = !!blk.isEdgeActivated;
     document.getElementById('blk-function').value = blk.funcBody || '';
     document.getElementById('blk-return').value = blk.returnExpr || '';
 
-    // Update color picker
-    const colorMatch = (blk.color || '').match(/#[0-9a-fA-F]{6}/);
-    if (colorMatch) {
-      document.getElementById('blk-color-picker').value = colorMatch[0];
-      document.getElementById('blk-color-preview').style.background = colorMatch[0];
-    }
+    // Load 3-level colors
+    const c1 = blk.color1 || '#4C97FF';
+    const c2 = blk.color2 || '#3373CC';
+    const c3 = blk.color3 || '#295FA8';
+    ['color1', 'color2', 'color3'].forEach((level, i) => {
+      const c = [c1, c2, c3][i];
+      document.getElementById(`blk-${level}-picker`).value = c;
+      document.getElementById(`blk-${level}`).value = c.toUpperCase();
+      document.getElementById(`blk-${level}-preview`).style.background = c;
+    });
 
     renderArgs(blk.args || []);
   } else {
     document.getElementById('blk-opcode').value = '';
     document.getElementById('blk-blockType').value = 'Scratch.BlockType.COMMAND';
     document.getElementById('blk-text').value = '';
-    document.getElementById('blk-color').value = '/*#4C97FF*/';
-    document.getElementById('blk-color-picker').value = '#4C97FF';
-    document.getElementById('blk-color-preview').style.background = '#4C97FF';
     document.getElementById('blk-isEdgeActivated').checked = false;
     document.getElementById('blk-function').value = '';
     document.getElementById('blk-return').value = '';
+
+    // Reset colors to default
+    setThreeColors('#4C97FF');
     renderArgs([]);
   }
 }
@@ -282,7 +358,9 @@ function saveBlock() {
     opcode,
     blockType: document.getElementById('blk-blockType').value,
     text: document.getElementById('blk-text').value,
-    color: document.getElementById('blk-color').value,
+    color1: document.getElementById('blk-color1').value.toUpperCase(),
+    color2: document.getElementById('blk-color2').value.toUpperCase(),
+    color3: document.getElementById('blk-color3').value.toUpperCase(),
     isEdgeActivated: document.getElementById('blk-isEdgeActivated').checked,
     args: collectArgs(),
     funcBody: document.getElementById('blk-function').value,
@@ -376,10 +454,10 @@ function renderBlockList() {
   state.blocks.forEach((blk, i) => {
     const div = document.createElement('div');
     div.className = 'block-item' + (state.editingIndex === i ? ' active' : '');
-    const color = (blk.color || '').match(/#[0-9a-fA-F]{6}/);
+    const color = blk.color1 || '#4C97FF';
     const typeShort = blk.blockType.split('.').pop();
     div.innerHTML = `
-      <span class="block-dot" style="background:${color?color[0]:'#4C97FF'}"></span>
+      <span class="block-dot" style="background:${color}"></span>
       <span class="block-name">${blk.opcode}</span>
       <span class="block-type">${typeShort}</span>
     `;
@@ -398,8 +476,7 @@ function refreshPreview() {
   area.innerHTML = '';
   state.blocks.forEach(blk => {
     const typeClass = getBlockClass(blk.blockType);
-    const color = (blk.color || '').match(/#[0-9a-fA-F]{6}/);
-    const bgColor = color ? color[0] : '#4C97FF';
+    const bgColor = blk.color1 || '#4C97FF';
 
     const el = document.createElement('div');
     el.className = `tw-block ${typeClass}`;
@@ -486,10 +563,16 @@ function generateCode() {
     const edgeLine = blk.isEdgeActivated ? `,\n                isEdgeActivated: true` : '';
     const comma = i < state.blocks.length - 1 ? ',' : '';
 
+    const c1 = blk.color1 || '#4C97FF';
+    const c2 = blk.color2 || '#3373CC';
+    const c3 = blk.color3 || '#295FA8';
     blocksCode += `            {
                 opcode: '${blk.opcode}',
                 blockType: ${blk.blockType},
-                text: '${escapeQuote(blk.text)}'${argsCode ? `,\n                arguments: {\n${argsCode}                }` : ''}${edgeLine}
+                text: '${escapeQuote(blk.text)}',
+                color1: '${c1}',
+                color2: '${c2}',
+                color3: '${c3}'${argsCode ? `,\n                arguments: {\n${argsCode}                }` : ''}${edgeLine}
             }${comma}\n`;
   });
 
@@ -500,6 +583,9 @@ function generateCode() {
         return {
             id: '${id}',
             name: '${name}',
+            color1: '${state.extColor1 || '#4C97FF'}',
+            color2: '${state.extColor2 || '#3373CC'}',
+            color3: '${state.extColor3 || '#295FA8'}',
             blocks: [
 ${blocksCode}            ]
         };
@@ -598,6 +684,9 @@ function exportURL() {
   const data = {
     extId: state.extId,
     extName: state.extName,
+    extColor1: state.extColor1,
+    extColor2: state.extColor2,
+    extColor3: state.extColor3,
     blocks: state.blocks,
     code: state.cm.getValue()
   };
@@ -637,9 +726,15 @@ function loadDataFromURL(str) {
   const data = JSON.parse(json);
   state.extId = data.extId || 'myextension';
   state.extName = data.extName || 'My Extension';
+  state.extColor1 = data.extColor1 || '#4C97FF';
+  state.extColor2 = data.extColor2 || '#3373CC';
+  state.extColor3 = data.extColor3 || '#295FA8';
   state.blocks = data.blocks || [];
   document.getElementById('ext-id').value = state.extId;
   document.getElementById('ext-name').value = state.extName;
+  document.getElementById('ext-color1').value = state.extColor1;
+  document.getElementById('ext-color2').value = state.extColor2;
+  document.getElementById('ext-color3').value = state.extColor3;
   renderBlockList();
   if (data.code) {
     state.cm.setValue(data.code);
@@ -768,6 +863,9 @@ function saveToLocalStorage() {
     localStorage.setItem('tw-ext-editor', JSON.stringify({
       extId: state.extId,
       extName: state.extName,
+      extColor1: state.extColor1,
+      extColor2: state.extColor2,
+      extColor3: state.extColor3,
       blocks: state.blocks,
       code: state.cm ? state.cm.getValue() : ''
     }));
@@ -780,9 +878,15 @@ function loadFromLocalStorage() {
     if (data) {
       state.extId = data.extId || 'myextension';
       state.extName = data.extName || 'My Extension';
+      state.extColor1 = data.extColor1 || '#4C97FF';
+      state.extColor2 = data.extColor2 || '#3373CC';
+      state.extColor3 = data.extColor3 || '#295FA8';
       state.blocks = data.blocks || [];
       document.getElementById('ext-id').value = state.extId;
       document.getElementById('ext-name').value = state.extName;
+      document.getElementById('ext-color1').value = state.extColor1;
+      document.getElementById('ext-color2').value = state.extColor2;
+      document.getElementById('ext-color3').value = state.extColor3;
       if (data.code) {
         state.cm.setValue(data.code);
       }

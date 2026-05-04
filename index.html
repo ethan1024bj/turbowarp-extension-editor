@@ -66,6 +66,38 @@
             <label>扩展名称</label>
             <input type="text" id="ext-name" value="My TurboWarp" placeholder="My TurboWarp">
           </div>
+          <div class="form-group">
+            <label>
+              扩展 UI 颜色
+              <button id="btn-ext-color-default" class="btn-icon" title="恢复默认颜色">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 1 1 .908-.418A6 6 0 1 1 8 2v1z"/><path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966a.25.25 0 0 1 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/></svg>
+              </button>
+            </label>
+            <div class="color-presets" style="margin-bottom:8px">
+              <button class="ext-color-preset" data-color="#4C97FF" style="background:#4C97FF" title="运动(蓝)"></button>
+              <button class="ext-color-preset" data-color="#9966FF" style="background:#9966FF" title="事件(紫)"></button>
+              <button class="ext-color-preset" data-color="#CF63CF" style="background:#CF63CF" title="控制(粉)"></button>
+              <button class="ext-color-preset" data-color="#FFAB19" style="background:#FFAB19" title="侦测(黄)"></button>
+              <button class="ext-color-preset" data-color="#FF6680" style="background:#FF6680" title="声音(玫红)"></button>
+              <button class="ext-color-preset" data-color="#5CB1D6" style="background:#5CB1D6" title="画笔(青)"></button>
+              <button class="ext-color-preset" data-color="#59C059" style="background:#59C059" title="数据(绿)"></button>
+              <button class="ext-color-preset" data-color="#FF8C1A" style="background:#FF8C1A" title="运算(橙)"></button>
+            </div>
+            <div class="ext-color-row">
+              <div class="ext-color-item">
+                <input type="color" id="ext-color1" value="#4C97FF">
+                <small>主体</small>
+              </div>
+              <div class="ext-color-item">
+                <input type="color" id="ext-color2" value="#3373CC">
+                <small>内部</small>
+              </div>
+              <div class="ext-color-item">
+                <input type="color" id="ext-color3" value="#295FA8">
+                <small>深色</small>
+              </div>
+            </div>
+          </div>
         </section>
 
         <!-- Block List -->
@@ -123,12 +155,7 @@
           <!-- Color -->
           <div class="form-group">
             <label>积木颜色</label>
-            <div class="color-input-group">
-              <input type="color" id="blk-color-picker" value="#4C97FF">
-              <input type="text" id="blk-color" value="/*#4C97FF*/" placeholder="/*#4C97FF*/">
-              <span class="color-preview" id="blk-color-preview"></span>
-            </div>
-            <div class="color-presets">
+            <div class="color-presets" style="margin-bottom:8px">
               <button class="color-preset" data-color="#4C97FF" style="background:#4C97FF" title="运动"></button>
               <button class="color-preset" data-color="#9966FF" style="background:#9966FF" title="事件"></button>
               <button class="color-preset" data-color="#CF63CF" style="background:#CF63CF" title="控制"></button>
@@ -137,6 +164,26 @@
               <button class="color-preset" data-color="#5CB1D6" style="background:#5CB1D6" title="画笔"></button>
               <button class="color-preset" data-color="#59C059" style="background:#59C059" title="数据"></button>
               <button class="color-preset" data-color="#FF8C1A" style="background:#FF8C1A" title="运算"></button>
+            </div>
+            <div class="color-input-group">
+              <label class="color-level-label">主体 (最亮)</label>
+              <input type="color" id="blk-color1-picker" value="#4C97FF">
+              <input type="text" id="blk-color1" value="#4C97FF" placeholder="#4C97FF">
+            </div>
+            <div class="color-input-group">
+              <label class="color-level-label">内部 (中等)</label>
+              <input type="color" id="blk-color2-picker" value="#3373CC">
+              <input type="text" id="blk-color2" value="#3373CC" placeholder="#3373CC">
+            </div>
+            <div class="color-input-group">
+              <label class="color-level-label">深色 (最深)</label>
+              <input type="color" id="blk-color3-picker" value="#295FA8">
+              <input type="text" id="blk-color3" value="#295FA8" placeholder="#295FA8">
+            </div>
+            <div class="color-preview-strip">
+              <span class="color-preview-block" id="blk-color1-preview" style="background:#4C97FF"></span>
+              <span class="color-preview-block" id="blk-color2-preview" style="background:#3373CC"></span>
+              <span class="color-preview-block" id="blk-color3-preview" style="background:#295FA8"></span>
             </div>
           </div>
 
