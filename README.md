@@ -5,8 +5,7 @@
 </p>
 
 我是一名中关村三小的三年级学生，我三年前开始学习Scratch编程、一年前开始学习C++编程、一个月前开始学习vibecoding。这是我做的第一个开源项目。<br>
-I am 9 , a primary student. I like the TurboWarp especially custom extension function.However, I don't know how to write JavaScript. So I use Claude Code to develop a visual editor.
-
+I am 9 , a primary student. I like the TurboWarp especially custom extension function.However, I don't know how to write JavaScript. So I use Claude Code to develop a visual editor.This is my first open source project。
 <h1 align="center">TurboWarp Extension Editor</h1>
 
 <p align="center">
