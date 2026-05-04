@@ -48,6 +48,11 @@ I am 9 , a primary student. I like the TurboWarp especially custom extension fun
 | **多语言界面** / **Bilingual UI** | 支持中文 / English 双语切换，点击标题栏右侧按钮即可切换，语言偏好自动保存<br>Switch between Chinese and English via the header button — preference is saved automatically |
 
 <img width="1872" height="995" alt="d0900db8717aa89161508abaa34d6f5b" src="https://github.com/user-attachments/assets/9d886aba-7912-41c9-993a-0be770f321c4" />
+<p align="center">中文界面</p>
+
+<img width="1576" height="910" alt="ScreenShot_2026-05-04_175611_309" src="https://github.com/user-attachments/assets/edc3324d-548d-43eb-9fae-b8aedbb922a4" />
+<p align="center">English Interface</p>
+
 
 ---
 
