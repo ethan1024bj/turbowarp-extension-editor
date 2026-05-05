@@ -1531,12 +1531,12 @@ function initAutocomplete() {
     };
   });
 
-  // Auto-trigger on dot
+  // Auto-trigger on any typing
   cm.on('inputRead', function(editor, changeObj) {
     if (changeObj.origin === '+input') {
       const ch = changeObj.text[0];
-      if (ch === '.') {
-        setTimeout(() => editor.showHint({ completeSingle: false }), 50);
+      if (ch && /[\w.]/.test(ch)) {
+        setTimeout(() => editor.showHint({ completeSingle: false }), 30);
       }
     }
   });
