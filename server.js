@@ -1,10 +1,12 @@
 require('dotenv').config();
 const express = require('express');
 const path = require('path');
+const http = require('http');
 const OpenAI = require('openai');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const WATCHER_PORT = 3001;
 
 const client = new OpenAI({
   apiKey: process.env.LLM_API_KEY,
@@ -12,6 +14,29 @@ const client = new OpenAI({
 });
 
 app.use(express.json());
+
+// Proxy /api/watcher/* to watcher on port 3001
+app.all('/api/watcher/*', (req, res) => {
+  const opts = {
+    hostname: '127.0.0.1',
+    port: WATCHER_PORT,
+    path: req.originalUrl,
+    method: req.method,
+    headers: { 'Content-Type': 'application/json' }
+  };
+  const proxy = http.request(opts, (proxyRes) => {
+    res.writeHead(proxyRes.statusCode, proxyRes.headers);
+    proxyRes.pipe(res);
+  });
+  proxy.on('error', () => {
+    res.status(502).json({ serverStatus: 'offline', error: 'Watcher not running' });
+  });
+  if (req.method === 'POST' && req.body) {
+    proxy.write(JSON.stringify(req.body));
+  }
+  proxy.end();
+});
+
 app.use(express.static(path.join(__dirname)));
 
 const SYSTEM_PROMPT = `你是一个 TurboWarp 扩展代码生成器。用户会用自然语言描述想要的积木功能，你需要生成对应的 JSON 配置。
@@ -109,6 +134,17 @@ app.post('/api/generate', async (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
+app.get('/api/status', (req, res) => {
+  res.json({ status: 'running', port: PORT, pid: process.pid, uptime: process.uptime() });
+});
+
+app.post('/api/stop', (req, res) => {
+  res.json({ status: 'stopping' });
+  console.log('Server stopping by user request...');
+  setTimeout(() => process.exit(0), 300);
+});
+
+const server = app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);
+  if (process.send) process.send({ type: 'started', port: PORT });
 });

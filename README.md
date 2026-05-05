@@ -45,7 +45,9 @@ I am 9 , a primary student. I like the TurboWarp especially custom extension fun
 | **颜色配置** / **Color System** | 三级颜色系统（浅色/中色/深色），预设色板匹配 Scratch 分类颜色<br>Three-level color system with preset palettes matching Scratch category colors |
 | **参数管理** / **Argument Management** | 支持 STRING / NUMBER / BOOLEAN / ANGLE / COLOR 等参数类型，可设默认值<br>Supports STRING, NUMBER, BOOLEAN, ANGLE, COLOR and more with default values |
 | **本地存储** / **Local Storage** | 自动保存所有配置和代码，刷新页面不丢失<br>Auto-saves all state and code — survives page refresh |
-| **多语言界面** / **Bilingual UI** | 支持中文 / English 双语切换，点击标题栏右侧按钮即可切换，语言偏好自动保存<br>Switch between Chinese and English via the header button — preference is saved automatically |
+| **多语言界面** / **Bilingual UI** | 支持中文 / English 双语切换，标题栏同时显示「中 / EN」，当前语言高亮，偏好自动保存<br>Header shows both 中/EN with active language highlighted — preference is saved automatically |
+| **AI 生成警告** / **AI Generation Warning** | AI 生成后弹出确认提醒：内容仅用于个人研发，请勿直接提交到扩展社区，并附 contributing guidelines 链接。用户需主动确认后才会应用结果<br>After AI generation, a confirmation dialog warns that content is for personal use only and links to contributing guidelines. Users must explicitly accept before results are applied |
+| **后台服务管理** / **Backend Service Manager** | 标题栏显示后台服务状态（运行中/已停止/离线），支持一键启动/停止后端服务<br>Header shows backend service status (Running/Stopped/Offline) with one-click start/stop toggle |
 | **代码片段库** / **Code Snippets Library** | 代码编辑界面左侧提供完整代码片段库，包含扩展积木、Scratch API 和 JavaScript 内置方法三大分类。每个片段显示代码类型、返回值类型、参数信息和功能说明，支持搜索过滤和一键复制<br>Left panel in code editor with Extension Blocks, Scratch API, and JS built-in snippets. Each shows type, return value, params, and description. Supports search filtering and one-click copy |
 | **代码补全** / **Code Autocomplete** | CodeMirror 编辑器内置智能代码补全，输入 `.` 或按 `Ctrl+Space` 触发。支持 Scratch API、用户自定义积木和 JavaScript 关键词补全<br>Built-in intelligent autocomplete in the editor. Trigger with `.` or `Ctrl+Space`. Supports Scratch API, user block opcodes, and JavaScript keyword completion |
 
@@ -78,6 +80,7 @@ npm start
 
 # 5. 打开浏览器 / Open browser
 # 访问 / Visit http://localhost:3000
+# 标题栏可一键启动/停止后端服务 / Use header button to start/stop backend
 ```
 
 ---
@@ -163,9 +166,9 @@ The editor provides intelligent autocomplete suggestions as you type:
 
 ### 切换语言 / Switch Language
 
-点击标题栏右侧的 **EN** / **中** 按钮即可在中文和英文之间切换。语言偏好会自动保存到本地存储，下次打开时自动恢复。
+标题栏同时显示 **中** / **EN**，当前语言高亮，点击即可切换。语言偏好自动保存。
 
-Click the **EN** / **中** button on the right side of the header to switch between Chinese and English. Your language preference is saved automatically and restored on your next visit.
+The header shows both **中** and **EN** — the active language is highlighted. Click to switch. Preference is saved automatically.
 
 ---
 
@@ -176,7 +179,8 @@ Click the **EN** / **中** button on the right side of the header to switch betw
 ├── style.css           # 样式 / Styles (dark theme)
 ├── app.js              # 前端逻辑 / Frontend logic
 ├── i18n.js             # 多语言模块 / Internationalization module (zh/en)
-├── server.js           # Node.js 代理服务器 / Node.js proxy server (AI API calls)
+├── server.js           # Node.js 服务器 / Node.js server (AI API + static files)
+├── watcher.js          # 后台服务管理器 / Backend service manager (start/stop server)
 ├── package.json        # 依赖配置 / Dependencies
 ├── .env.example        # 环境变量模板 / Environment variable template
 └── .gitignore          # Git 忽略规则 / Git ignore rules

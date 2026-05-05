@@ -113,6 +113,7 @@
       'toast.generating': '正在生成中，请稍候...',
       'toast.genSuccess': '生成成功！共 {n} 个积木',
       'toast.genFail': '生成失败: {msg}',
+      'toast.genAborted': '已放弃生成',
       'toast.urlCopied': 'URL 已复制到剪贴板',
       'toast.colorReset': '已恢复默认颜色',
       'toast.blockSaved': '积木已保存',
@@ -212,7 +213,21 @@
 
       // Language switcher
       'lang.switch': 'EN',
-      'lang.current': '中文'
+      'lang.current': '中文',
+
+      // Server toggle
+      'server.status': '后台服务',
+      'server.running': '服务运行中',
+      'server.stopped': '服务已停止',
+      'server.starting': '启动中...',
+      'server.stopping': '停止中...',
+      'server.offline': 'Watcher 离线',
+
+      // AI Warning
+      'aiWarning.title': '⚠ AI 生成提醒',
+      'aiWarning.desc': 'AI 生成内容仅用于辅助个人研发，请勿直接发布提交到扩展社区，请遵循 <a href="https://github.com/TurboWarp/extensions/blob/8b27fe92f4674e53e3c677a11e609c77254df08f/CONTRIBUTING.md" target="_blank" rel="noopener">contributing guidelines</a>。',
+      'aiWarning.continue': '继续生成',
+      'aiWarning.abort': '放弃生成'
     },
 
     en: {
@@ -325,6 +340,7 @@
       'toast.generating': 'Generating, please wait...',
       'toast.genSuccess': 'Generation complete! {n} block(s) created',
       'toast.genFail': 'Generation failed: {msg}',
+      'toast.genAborted': 'Generation aborted',
       'toast.urlCopied': 'URL copied to clipboard',
       'toast.colorReset': 'Color reset to default',
       'toast.blockSaved': 'Block saved',
@@ -424,7 +440,21 @@
 
       // Language switcher
       'lang.switch': '中',
-      'lang.current': 'English'
+      'lang.current': 'English',
+
+      // Server toggle
+      'server.status': 'Backend',
+      'server.running': 'Running',
+      'server.stopped': 'Stopped',
+      'server.starting': 'Starting...',
+      'server.stopping': 'Stopping...',
+      'server.offline': 'Watcher Offline',
+
+      // AI Warning
+      'aiWarning.title': '⚠ AI Generation Notice',
+      'aiWarning.desc': 'AI-generated content is for personal development assistance only. Do not directly publish or submit to the extension community. Please follow the <a href="https://github.com/TurboWarp/extensions/blob/8b27fe92f4674e53e3c677a11e609c77254df08f/CONTRIBUTING.md" target="_blank" rel="noopener">contributing guidelines</a>.',
+      'aiWarning.continue': 'Continue',
+      'aiWarning.abort': 'Abort'
     }
   };
 
@@ -473,11 +503,10 @@
     document.title = t('header.title');
 
     // Update language switcher display
-    const langBtn = document.getElementById('btn-lang-switch');
-    if (langBtn) {
-      langBtn.textContent = t('lang.switch');
-      langBtn.title = currentLang === 'zh' ? 'Switch to English' : '切换到中文';
-    }
+    const langOpts = document.querySelectorAll('#btn-lang-switch .lang-opt');
+    langOpts.forEach(el => {
+      el.classList.toggle('lang-active', el.dataset.lang === currentLang);
+    });
   }
 
   function setLang(lang) {

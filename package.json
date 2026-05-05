@@ -4,7 +4,7 @@
   "description": "TurboWarp Extension Editor with AI code generation",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node watcher.js"
   },
   "dependencies": {
     "dotenv": "^16.4.7",

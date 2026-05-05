@@ -22,6 +22,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initAI();
   initKeyboardShortcuts();
   initImportFromURL();
+  initServerToggle();
   loadFromLocalStorage();
   renderBlockList();
   renderSnippets();
@@ -174,6 +175,68 @@ function initSysParams() {
   document.getElementById('sys-memory').textContent = nav.deviceMemory ? `${nav.deviceMemory} GB` : '-';
 }
 
+// ==================== Server Toggle ====================
+const WATCHER_URL = 'http://' + location.hostname + ':3001';
+
+function initServerToggle() {
+  const btn = document.getElementById('btn-server-toggle');
+
+  btn.addEventListener('click', async () => {
+    const cur = btn.classList;
+    if (cur.contains('running')) {
+      await controlServer('stop');
+    } else if (cur.contains('stopped') || cur.contains('offline')) {
+      await controlServer('start');
+    }
+  });
+
+  pollServerStatus();
+  setInterval(pollServerStatus, 3000);
+}
+
+async function pollServerStatus() {
+  const btn = document.getElementById('btn-server-toggle');
+  const label = document.getElementById('server-label');
+  try {
+    const resp = await fetch(WATCHER_URL + '/api/watcher/status');
+    if (!resp.ok) throw new Error('fail');
+    const data = await resp.json();
+    btn.className = 'btn btn-server ' + data.serverStatus;
+    if (data.serverStatus === 'running') {
+      label.textContent = i18n.t('server.running') + (data.uptime > 0 ? ` (${formatUptime(data.uptime)})` : '');
+    } else if (data.serverStatus === 'starting') {
+      label.textContent = i18n.t('server.starting');
+    } else if (data.serverStatus === 'stopping') {
+      label.textContent = i18n.t('server.stopping');
+    } else {
+      label.textContent = i18n.t('server.stopped');
+    }
+  } catch (e) {
+    btn.className = 'btn btn-server offline';
+    label.textContent = i18n.t('server.offline');
+  }
+}
+
+async function controlServer(action) {
+  const btn = document.getElementById('btn-server-toggle');
+  const label = document.getElementById('server-label');
+  btn.disabled = true;
+  label.textContent = i18n.t(action === 'start' ? 'server.starting' : 'server.stopping');
+  try {
+    await fetch(WATCHER_URL + '/api/watcher/' + action, { method: 'POST' });
+    setTimeout(pollServerStatus, 1500);
+  } catch (e) {
+    // watcher might be down
+  }
+  btn.disabled = false;
+}
+
+function formatUptime(s) {
+  if (s < 60) return s + 's';
+  if (s < 3600) return Math.floor(s / 60) + 'm';
+  return Math.floor(s / 3600) + 'h' + Math.floor((s % 3600) / 60) + 'm';
+}
+
 // ==================== AI Generate ====================
 function initAI() {
   const input = document.getElementById('ai-input');
@@ -222,6 +285,15 @@ async function callAI() {
 
     const data = await resp.json();
 
+    // Show warning dialog before applying
+    const accepted = await showAIWarning();
+    if (!accepted) {
+      status.className = 'ai-status error';
+      status.textContent = i18n.t('toast.genAborted');
+      setTimeout(() => { status.style.display = 'none'; }, 3000);
+      return;
+    }
+
     // Apply to state
     state.extId = data.extId || state.extId;
     state.extName = data.extName || state.extName;
@@ -251,6 +323,27 @@ async function callAI() {
   } finally {
     btn.disabled = false;
   }
+}
+
+function showAIWarning() {
+  return new Promise((resolve) => {
+    const modal = document.getElementById('ai-warning-modal');
+    const btnContinue = document.getElementById('btn-ai-continue');
+    const btnAbort = document.getElementById('btn-ai-abort');
+
+    modal.style.display = 'flex';
+
+    function cleanup() {
+      modal.style.display = 'none';
+      btnContinue.removeEventListener('click', onContinue);
+      btnAbort.removeEventListener('click', onAbort);
+    }
+    function onContinue() { cleanup(); resolve(true); }
+    function onAbort() { cleanup(); resolve(false); }
+
+    btnContinue.addEventListener('click', onContinue);
+    btnAbort.addEventListener('click', onAbort);
+  });
 }
 
 // ==================== Buttons ====================
@@ -291,6 +384,8 @@ function initButtons() {
     renderSnippets();
     renderArgs(collectArgs());
   });
+
+  updateLangSwitch();
 
   document.getElementById('blk-blockType').addEventListener('change', (e) => {
     const isReporter = e.target.value.includes('REPORTER');
@@ -1436,6 +1531,13 @@ function initAutocomplete() {
   if (searchInput) {
     searchInput.addEventListener('input', () => renderSnippets());
   }
+}
+
+function updateLangSwitch() {
+  const cur = i18n.getLang();
+  document.querySelectorAll('#btn-lang-switch .lang-opt').forEach(el => {
+    el.classList.toggle('lang-active', el.dataset.lang === cur);
+  });
 }
 
 // ==================== Toast ====================

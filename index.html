@@ -16,7 +16,15 @@
       <svg width="28" height="28" viewBox="0 0 28 28"><circle cx="14" cy="14" r="13" fill="#4FC3F7"/><text x="14" y="19" text-anchor="middle" fill="#fff" font-size="14" font-weight="bold">T</text></svg>
       <h1 data-i18n="header.title">TurboWarp 扩展编辑器</h1>
     </div>
-    <button id="btn-lang-switch" class="btn-lang" title="Switch to English">EN</button>
+    <div id="btn-lang-switch" class="lang-switch" title="切换语言 / Switch language">
+      <span class="lang-opt lang-active" data-lang="zh">中</span>
+      <span class="lang-sep">/</span>
+      <span class="lang-opt" data-lang="en">EN</span>
+    </div>
+    <button id="btn-server-toggle" class="btn btn-server" title="启动/停止后台服务">
+      <span class="server-dot" id="server-dot"></span>
+      <span id="server-label" data-i18n="server.status">后台服务</span>
+    </button>
     <div class="header-actions">
       <button id="btn-auto-generate" class="btn btn-accent" data-i18n-title="header.autoGenerateTitle" title="根据左侧配置自动生成代码">
         <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1a.5.5 0 0 1 .5.5v5.793l2.146-2.147a.5.5 0 0 1 .708.708l-3 3a.5.5 0 0 1-.708 0l-3-3a.5.5 0 1 1 .708-.708L7.5 7.293V1.5A.5.5 0 0 1 8 1z"/><path d="M2 13.5V10a.5.5 0 0 1 1 0v3h10v-3a.5.5 0 0 1 1 0v3.5a.5.5 0 0 1-.5.5h-11a.5.5 0 0 1-.5-.5z"/></svg>
@@ -522,6 +530,18 @@ Scratch.extensions.register(new MathTools());</code></pre>
     <div class="modal-actions">
       <button id="btn-copy-url" class="btn btn-primary btn-sm" data-i18n="modal.copyURL">复制 URL</button>
       <button id="btn-close-modal" class="btn btn-secondary btn-sm" data-i18n="modal.close">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- AI Warning Modal -->
+<div id="ai-warning-modal" class="modal" style="display:none">
+  <div class="modal-content modal-warning">
+    <h3 data-i18n="aiWarning.title">⚠ AI 生成提醒</h3>
+    <p data-i18n-html="aiWarning.desc">AI 生成内容仅用于辅助个人研发，请勿直接发布提交到扩展社区，请遵循 <a href="https://github.com/TurboWarp/extensions/blob/8b27fe92f4674e53e3c677a11e609c77254df08f/CONTRIBUTING.md" target="_blank" rel="noopener">contributing guidelines</a>。</p>
+    <div class="modal-actions">
+      <button id="btn-ai-continue" class="btn btn-primary btn-sm" data-i18n="aiWarning.continue">继续生成</button>
+      <button id="btn-ai-abort" class="btn btn-danger btn-sm" data-i18n="aiWarning.abort">放弃生成</button>
     </div>
   </div>
 </div>

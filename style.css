@@ -39,14 +39,54 @@ header{
 .logo{display:flex;align-items:center;gap:10px}
 .logo h1{font-size:16px;font-weight:600;color:var(--text)}
 .header-actions{display:flex;gap:8px}
-.btn-lang{
+.lang-switch{
+  display:flex;align-items:center;gap:2px;
   padding:4px 10px;font-size:12px;font-weight:600;
   background:var(--surface);border:1px solid var(--border);
-  border-radius:var(--radius-sm);color:var(--accent);
-  cursor:pointer;transition:all .15s;margin-right:8px;
-  min-width:32px;text-align:center;
+  border-radius:var(--radius-sm);cursor:pointer;
+  transition:all .15s;margin-right:8px;user-select:none;
 }
-.btn-lang:hover{background:var(--accent);color:#1a1a2e;border-color:var(--accent)}
+.lang-switch:hover{border-color:var(--text2)}
+.lang-opt{transition:all .15s;padding:0 2px}
+.lang-opt.lang-active{color:var(--accent);font-weight:700}
+.lang-opt:not(.lang-active){color:var(--text2);opacity:.45;font-weight:400}
+.lang-opt:not(.lang-active):hover{opacity:.8}
+.lang-sep{color:var(--border);margin:0 1px;font-weight:400}
+
+.btn-server{
+  display:flex;align-items:center;gap:6px;
+  padding:5px 12px;font-size:12px;font-weight:500;
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius-sm);color:var(--text2);
+  cursor:pointer;transition:all .2s;margin-right:4px;
+}
+.btn-server:hover{background:var(--surface2);border-color:var(--text2)}
+.btn-server.running{color:var(--success);border-color:var(--success)}
+.btn-server.running:hover{background:rgba(89,192,89,.15)}
+.btn-server.stopped{color:var(--danger);border-color:var(--danger)}
+.btn-server.stopped:hover{background:rgba(255,102,128,.15)}
+.btn-server.offline{color:#666;border-color:#555}
+.btn-server.offline:hover{background:rgba(102,102,102,.15)}
+.btn-server.starting,.btn-server.stopping{color:var(--accent);border-color:var(--accent)}
+.server-dot{
+  width:8px;height:8px;border-radius:50%;
+  background:var(--text2);transition:background .3s;
+  flex-shrink:0;
+}
+.btn-server.running .server-dot{background:var(--success);box-shadow:0 0 6px var(--success)}
+.btn-server.stopped .server-dot{background:var(--danger)}
+.btn-server.starting .server-dot,
+.btn-server.stopping .server-dot{
+  background:var(--accent);animation:pulse-dot 1s ease-in-out infinite;
+}
+@keyframes pulse-dot{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* ========== AI Warning Modal ========== */
+.modal-warning{border-color:var(--accent)}
+.modal-warning h3{color:var(--accent);margin-bottom:12px}
+.modal-warning p{color:var(--text);line-height:1.6;margin-bottom:16px}
+.modal-warning a{color:var(--primary);text-decoration:underline}
+.modal-warning a:hover{color:var(--primary-hover)}
 
 .main-layout{
   display:flex;flex:1;overflow:hidden;
