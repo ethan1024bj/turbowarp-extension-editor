@@ -1425,7 +1425,6 @@ function escapeHTML(str) {
 function initAutocomplete() {
   const cm = state.cm;
 
-  // Custom Scratch + user hints
   const scratchCompletions = [
     'Scratch.BlockType.COMMAND', 'Scratch.BlockType.REPORTER', 'Scratch.BlockType.BOOLEAN',
     'Scratch.BlockType.HAT', 'Scratch.BlockType.CONDITIONAL', 'Scratch.BlockType.LOOP', 'Scratch.BlockType.BUTTON',
@@ -1439,89 +1438,105 @@ function initAutocomplete() {
     'Scratch.vm.runtime.ioDevices.cloud.requestUpdateVariable',
   ];
 
+  const jsKeywords = [
+    'function', 'return', 'const', 'let', 'var', 'if', 'else', 'for', 'while',
+    'do', 'switch', 'case', 'break', 'continue', 'new', 'this', 'class',
+    'extends', 'super', 'import', 'export', 'default', 'try', 'catch',
+    'finally', 'throw', 'typeof', 'instanceof', 'void', 'delete',
+    'true', 'false', 'null', 'undefined', 'NaN', 'Infinity',
+    'console', 'Math', 'JSON', 'Array', 'Object', 'String', 'Number',
+    'Boolean', 'Date', 'Promise', 'Map', 'Set', 'RegExp', 'Error',
+    'parseInt', 'parseFloat', 'isNaN', 'isFinite', 'encodeURI', 'decodeURI',
+    'setTimeout', 'setInterval', 'clearTimeout', 'clearInterval', 'fetch',
+    'console.log', 'console.warn', 'console.error', 'console.table',
+    'Math.floor', 'Math.ceil', 'Math.round', 'Math.random', 'Math.abs',
+    'Math.max', 'Math.min', 'Math.pow', 'Math.sqrt', 'Math.sin', 'Math.cos',
+    'Math.PI', 'JSON.parse', 'JSON.stringify',
+    'Array.isArray', 'Array.from', 'Object.keys', 'Object.values', 'Object.entries',
+  ];
+
   CodeMirror.registerHelper('hint', 'javascript', function(editor) {
     const cur = editor.getCursor();
-    const token = editor.getTokenAt(cur);
-    let start = token.start;
-    let end = cur.ch;
-    let line = token.string;
-
-    // Determine what the user is typing
     const text = editor.getLine(cur.line);
     const beforeCursor = text.slice(0, cur.ch);
 
-    // Get the word being typed
+    // Match word including dots: e.g. "Scratch.BlockType" or "console."
     const wordMatch = beforeCursor.match(/[\w$.]+$/);
     const word = wordMatch ? wordMatch[0] : '';
 
-    if (word.length < 1 && !beforeCursor.endsWith('.')) return;
-
-    const wordStart = cur.ch - word.length;
-
-    // Build list of completions
-    let completions = [];
-
-    // Scratch API completions
-    scratchCompletions.forEach(c => {
-      if (!word || c.toLowerCase().includes(word.toLowerCase())) {
-        completions.push({ text: c, displayText: c });
-      }
-    });
-
-    // User block opcodes
-    state.blocks.forEach(blk => {
-      const name = blk.opcode;
-      if (!word || name.toLowerCase().includes(word.toLowerCase())) {
-        completions.push({ text: name, displayText: name + ' (block)' });
-      }
-    });
-
-    // Standard JS keywords
-    const jsKeywords = [
-      'function', 'return', 'const', 'let', 'var', 'if', 'else', 'for', 'while',
-      'do', 'switch', 'case', 'break', 'continue', 'new', 'this', 'class',
-      'extends', 'super', 'import', 'export', 'default', 'try', 'catch',
-      'finally', 'throw', 'typeof', 'instanceof', 'void', 'delete',
-      'true', 'false', 'null', 'undefined', 'NaN', 'Infinity',
-      'console', 'Math', 'JSON', 'Array', 'Object', 'String', 'Number',
-      'Boolean', 'Date', 'Promise', 'Map', 'Set', 'RegExp', 'Error',
-      'parseInt', 'parseFloat', 'isNaN', 'isFinite', 'encodeURI', 'decodeURI',
-      'setTimeout', 'setInterval', 'clearTimeout', 'clearInterval', 'fetch',
-    ];
-    jsKeywords.forEach(k => {
-      if (!word || k.toLowerCase().startsWith(word.toLowerCase())) {
-        completions.push({ text: k, displayText: k });
-      }
-    });
-
-    // Filter to only match what user typed
-    if (word) {
-      completions = completions.filter(c =>
-        c.displayText.toLowerCase().includes(word.toLowerCase())
-      );
+    // Split into context (everything before last dot) and partial (after last dot)
+    let context = '';
+    let partial = word;
+    const lastDot = word.lastIndexOf('.');
+    if (lastDot >= 0) {
+      context = word.slice(0, lastDot + 1);  // e.g. "Scratch."
+      partial = word.slice(lastDot + 1);       // e.g. "BlockType" or ""
     }
 
-    // Deduplicate
+    if (!word && !beforeCursor.endsWith('.')) return null;
+
+    // If user just typed a dot with nothing after, show all completions for that context
+    if (beforeCursor.endsWith('.') && !partial) {
+      partial = '';
+    }
+
+    const from = CodeMirror.Pos(cur.line, cur.ch - partial.length);
+
+    // Build candidate list
+    let candidates = [];
+
+    scratchCompletions.forEach(c => {
+      candidates.push({ text: c, displayText: c });
+    });
+
+    jsKeywords.forEach(k => {
+      candidates.push({ text: k, displayText: k });
+    });
+
+    state.blocks.forEach(blk => {
+      candidates.push({ text: blk.opcode, displayText: blk.opcode + ' (block)' });
+    });
+
+    // Filter and produce insert text
+    const pLower = partial.toLowerCase();
+    const results = [];
     const seen = new Set();
-    completions = completions.filter(c => {
-      if (seen.has(c.text)) return false;
-      seen.add(c.text);
-      return true;
+
+    candidates.forEach(c => {
+      let full = c.text;
+      let fullLower = full.toLowerCase();
+
+      // If we have context (e.g. "Scratch."), match completions that start with it
+      if (context) {
+        if (!fullLower.startsWith(context.toLowerCase())) return;
+        // The insert text is the suffix after context
+        const suffix = full.slice(context.length);
+        if (pLower && !suffix.toLowerCase().startsWith(pLower)) return;
+        if (seen.has(suffix)) return;
+        seen.add(suffix);
+        results.push({ text: suffix, displayText: full });
+      } else {
+        // No context — match against partial
+        if (pLower && !fullLower.startsWith(pLower)) return;
+        if (seen.has(full)) return;
+        seen.add(full);
+        results.push({ text: full, displayText: full });
+      }
     });
 
     return {
-      list: completions.slice(0, 50),
-      from: CodeMirror.Pos(cur.line, wordStart),
-      to: CodeMirror.Pos(cur.line, end)
+      list: results.slice(0, 50),
+      from: from,
+      to: CodeMirror.Pos(cur.line, cur.ch)
     };
   });
 
-  // Auto-trigger on dot and [
+  // Auto-trigger on dot
   cm.on('inputRead', function(editor, changeObj) {
     if (changeObj.origin === '+input') {
       const ch = changeObj.text[0];
-      if (ch === '.' || ch === '[') {
-        editor.showHint({ completeSingle: false });
+      if (ch === '.') {
+        setTimeout(() => editor.showHint({ completeSingle: false }), 50);
       }
     }
   });
