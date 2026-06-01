@@ -265,6 +265,57 @@ header{
 }
 .arg-remove:hover{background:rgba(255,102,128,.15)}
 
+/* ========== Menu Editor ========== */
+.menu-editor{
+  margin:4px 0 4px 16px;padding:6px 8px;
+  background:var(--bg);border:1px solid var(--border);
+  border-radius:var(--radius-sm);
+}
+.menu-editor-header{
+  font-size:11px;color:var(--accent);font-weight:600;
+  margin-bottom:4px;text-transform:uppercase;letter-spacing:.3px;
+}
+.menu-items-list{display:flex;flex-direction:column;gap:3px}
+.menu-item-row{
+  display:flex;align-items:center;gap:4px;
+}
+.menu-item-row input{
+  flex:1;min-width:0;padding:3px 6px;
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius-sm);color:var(--text);font-size:11px;
+}
+.menu-item-row input:focus{outline:none;border-color:var(--primary)}
+
+/* ========== Menu List (Extension Level) ========== */
+.menu-list{display:flex;flex-direction:column;gap:4px}
+.menu-def-item{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius-sm);padding:6px 8px;
+}
+.menu-def-header{
+  display:flex;align-items:center;gap:6px;font-size:12px;
+}
+.menu-def-name{
+  font-weight:600;color:var(--accent);font-family:'Consolas',monospace;
+}
+.menu-def-preview{
+  flex:1;color:var(--text2);font-size:11px;overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap;
+}
+.menu-def-header .btn-icon{margin-left:auto}
+
+/* ========== Menu Edit Modal ========== */
+.menu-edit-items{display:flex;flex-direction:column;gap:3px;max-height:250px;overflow-y:auto}
+.menu-edit-row{
+  display:flex;align-items:center;gap:4px;
+}
+.menu-edit-row input{
+  flex:1;min-width:0;padding:4px 6px;
+  background:var(--bg);border:1px solid var(--border);
+  border-radius:var(--radius-sm);color:var(--text);font-size:12px;
+}
+.menu-edit-row input:focus{outline:none;border-color:var(--primary)}
+
 /* ========== System Params ========== */
 .sys-params{display:flex;flex-direction:column;gap:4px}
 .sys-param-item{
@@ -395,6 +446,86 @@ header{
   padding-left:14px;padding-right:14px;
 }
 
+/* Color arg - rounded pill with color indicator */
+.tw-block .tw-arg.color-arg{
+  background:#fff;color:#333;
+  border-radius:14px;padding:3px 10px;
+  border:1px solid rgba(0,0,0,.15);
+  box-shadow:inset 0 1px 2px rgba(0,0,0,.08);
+  position:relative;padding-left:22px;
+}
+.tw-block .tw-arg.color-arg::before{
+  content:'';position:absolute;left:6px;top:50%;transform:translateY(-50%);
+  width:10px;height:10px;border-radius:50%;
+  background:currentColor;border:1px solid rgba(0,0,0,.2);
+}
+
+/* Angle arg - rounded pill with degree symbol */
+.tw-block .tw-arg.angle-arg{
+  background:#fff;color:#333;
+  border-radius:14px;padding:3px 10px;
+  border:1px solid rgba(0,0,0,.15);
+  box-shadow:inset 0 1px 2px rgba(0,0,0,.08);
+}
+
+/* Matrix arg - square-ish shape */
+.tw-block .tw-arg.matrix-arg{
+  background:#fff;color:#333;
+  border-radius:4px;padding:3px 8px;
+  border:1px solid rgba(0,0,0,.15);
+  box-shadow:inset 0 1px 2px rgba(0,0,0,.08);
+  font-family:monospace;font-size:10px;
+}
+
+/* Variable arg - rounded pill with icon */
+.tw-block .tw-arg.variable-arg{
+  background:#fff;color:#333;
+  border-radius:14px;padding:3px 10px;
+  border:1px solid rgba(0,0,0,.15);
+  box-shadow:inset 0 1px 2px rgba(0,0,0,.08);
+  font-style:italic;
+}
+
+/* List arg - rounded pill */
+.tw-block .tw-arg.list-arg{
+  background:#fff;color:#333;
+  border-radius:14px;padding:3px 10px;
+  border:1px solid rgba(0,0,0,.15);
+  box-shadow:inset 0 1px 2px rgba(0,0,0,.08);
+}
+
+/* Costume arg - rounded pill */
+.tw-block .tw-arg.costume-arg{
+  background:#fff;color:#333;
+  border-radius:14px;padding:3px 10px;
+  border:1px solid rgba(0,0,0,.15);
+  box-shadow:inset 0 1px 2px rgba(0,0,0,.08);
+}
+
+/* Sound arg - rounded pill */
+.tw-block .tw-arg.sound-arg{
+  background:#fff;color:#333;
+  border-radius:14px;padding:3px 10px;
+  border:1px solid rgba(0,0,0,.15);
+  box-shadow:inset 0 1px 2px rgba(0,0,0,.08);
+}
+
+/* Image arg - dashed border */
+.tw-block .tw-arg.image-arg{
+  background:rgba(255,255,255,.3);color:#fff;
+  border-radius:4px;padding:3px 8px;
+  border:1px dashed rgba(255,255,255,.5);
+  font-size:10px;
+}
+
+/* Note arg - rounded pill */
+.tw-block .tw-arg.note-arg{
+  background:#fff;color:#333;
+  border-radius:14px;padding:3px 10px;
+  border:1px solid rgba(0,0,0,.15);
+  box-shadow:inset 0 1px 2px rgba(0,0,0,.08);
+}
+
 /* ======== Command block ======== */
 .tw-block.command .tw-shape{
   border-radius:4px;
@@ -522,6 +653,7 @@ header{
 .snippet-type-hat{background:#FFAB1922;color:#FFAB19}
 .snippet-type-api{background:#5CB1D622;color:#5CB1D6}
 .snippet-type-js{background:#FF8C1A22;color:#FF8C1A}
+.snippet-type-menu{background:#CF63CF22;color:#CF63CF}
 .snippet-card-desc{
   font-size:11px;color:var(--text2);line-height:1.4;
   margin-bottom:3px;

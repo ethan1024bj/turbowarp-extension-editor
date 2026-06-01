@@ -43,7 +43,10 @@ I am 9 , a primary student. I like the TurboWarp especially custom extension fun
 | **语法参考** / **Syntax Reference** | 完整的 TurboWarp 扩展语法速查手册，10 个章节<br>Complete TurboWarp extension API reference embedded in the UI (10 sections) |
 | **一键导出** / **One-Click Export** | 下载为 .js 文件 / 生成可分享 URL / 复制代码到剪贴板<br>Download as .js file / generate shareable URL / copy code to clipboard |
 | **颜色配置** / **Color System** | 三级颜色系统（浅色/中色/深色），预设色板匹配 Scratch 分类颜色<br>Three-level color system with preset palettes matching Scratch category colors |
-| **参数管理** / **Argument Management** | 支持 STRING / NUMBER / BOOLEAN / ANGLE / COLOR 等参数类型，可设默认值<br>Supports STRING, NUMBER, BOOLEAN, ANGLE, COLOR and more with default values |
+| **参数管理** / **Argument Management** | 支持全部 12 种参数类型：STRING / NUMBER / BOOLEAN / COLOR / ANGLE / MATRIX / NOTE / VARIABLE / LIST / COSTUME / SOUND / IMAGE，可设默认值和菜单关联<br>Supports all 12 argument types: STRING, NUMBER, BOOLEAN, COLOR, ANGLE, MATRIX, NOTE, VARIABLE, LIST, COSTUME, SOUND, IMAGE — with default values and menu linking |
+| **菜单系统** / **Menu System** | 支持静态菜单（文字/值分离、分隔线）和动态菜单（方法名返回数组），可设置 acceptReporters<br>Supports static menus (text/value pairs, separators) and dynamic menus (method name returning array), with acceptReporters option |
+| **非沙箱模式** / **Unsandboxed Mode** | 支持生成非沙箱扩展代码，可访问 DOM、fetch 等高级功能<br>Generates unsandboxed extension code with access to DOM, fetch, and other advanced features |
+| **生效范围** / **Target Types** | 可配置扩展仅在角色(sprite)、仅在舞台(stage)或两者都生效<br>Configure extension to work on sprite only, stage only, or both |
 | **本地存储** / **Local Storage** | 自动保存所有配置和代码，刷新页面不丢失<br>Auto-saves all state and code — survives page refresh |
 | **多语言界面** / **Bilingual UI** | 支持中文 / English 双语切换，标题栏同时显示「中 / EN」，当前语言高亮，偏好自动保存<br>Header shows both 中/EN with active language highlighted — preference is saved automatically |
 | **AI 生成警告** / **AI Generation Warning** | AI 生成后弹出确认提醒：内容仅用于个人研发，请勿直接提交到扩展社区，并附 contributing guidelines 链接。用户需主动确认后才会应用结果<br>After AI generation, a confirmation dialog warns that content is for personal use only and links to contributing guidelines. Users must explicitly accept before results are applied |
@@ -125,6 +128,31 @@ LLM_MODEL=gpt-4o-mini
 2. 配置积木类型、显示文本、参数、颜色 / Configure block type, display text, arguments, and colors
 3. 编写函数实现 / Write the function body
 4. 点击 **自动编写** 生成代码 / Click **Auto-generate** to produce the code
+
+### 扩展配置选项 / Extension Config Options
+
+| 配置项 / Option | 说明 / Description |
+|---|---|
+| **扩展 ID** / **Extension ID** | 仅小写字母和数字，如 `mytools` |
+| **扩展名称** / **Extension Name** | 显示在 TurboWarp 中的名称 |
+| **UI 颜色** / **UI Colors** | 三级颜色系统，8 种预设色板 |
+| **生效范围** / **Target Types** | `全部` / `仅角色(sprite)` / `仅舞台(stage)` |
+| **文档链接** / **Docs URI** | 扩展文档 URL（可选） |
+| **运行模式** / **Sandbox Mode** | `沙箱模式` / `非沙箱模式`（需要 DOM/fetch 时选择非沙箱） |
+
+### 菜单配置 / Menu Configuration
+
+支持两种菜单模式 / Supports two menu modes:
+
+**静态菜单 / Static Menu:**
+- 简单字符串列表：`['选项A', '选项B', '选项C']`
+- 文字/值分离：`[{ text: '显示文本', value: 'real_value' }]`
+- 带分隔线：`['功能1', '-', '功能2']`
+
+**动态菜单 / Dynamic Menu:**
+- 勾选「动态菜单」复选框 / Check "Dynamic Menu" checkbox
+- 填写类中的方法名，该方法返回菜单选项数组 / Fill in method name that returns an array of menu items
+- 生成代码会自动创建方法模板 / Code generation auto-creates method template
 
 ### 加载到 TurboWarp / Load into TurboWarp
 

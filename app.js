@@ -5,7 +5,11 @@ const state = {
   extColor1: '#4C97FF',
   extColor2: '#3373CC',
   extColor3: '#295FA8',
+  extTargetTypes: '',
+  extDocsURI: '',
+  extSandboxMode: 'sandbox',
   blocks: [],
+  menus: [],
   editingIndex: -1,
   cm: null
 };
@@ -19,12 +23,14 @@ document.addEventListener('DOMContentLoaded', () => {
   initColorSync();
   initSysParams();
   initButtons();
+  initMenus();
   initAI();
   initKeyboardShortcuts();
   initImportFromURL();
   initServerToggle();
   loadFromLocalStorage();
   renderBlockList();
+  renderMenuList();
   renderSnippets();
   refreshPreview();
   syncCodeFromState();
@@ -300,15 +306,23 @@ async function callAI() {
     state.extColor1 = data.extColor1 || state.extColor1;
     state.extColor2 = data.extColor2 || state.extColor2;
     state.extColor3 = data.extColor3 || state.extColor3;
+    state.extTargetTypes = data.extTargetTypes || '';
+    state.extDocsURI = data.extDocsURI || '';
+    state.extSandboxMode = data.extSandboxMode || 'sandbox';
     state.blocks = data.blocks || [];
+    state.menus = data.menus || [];
 
     document.getElementById('ext-id').value = state.extId;
     document.getElementById('ext-name').value = state.extName;
     document.getElementById('ext-color1').value = state.extColor1;
     document.getElementById('ext-color2').value = state.extColor2;
     document.getElementById('ext-color3').value = state.extColor3;
+    document.getElementById('ext-targetTypes').value = state.extTargetTypes;
+    document.getElementById('ext-docsURI').value = state.extDocsURI;
+    document.getElementById('ext-sandboxMode').value = state.extSandboxMode;
 
     renderBlockList();
+    renderMenuList();
     renderSnippets();
     refreshPreview();
     syncCodeFromState();
@@ -381,6 +395,7 @@ function initButtons() {
     // Re-render dynamic content
     initSysParams();
     renderBlockList();
+    renderMenuList();
     renderSnippets();
     renderArgs(collectArgs());
   });
@@ -388,12 +403,16 @@ function initButtons() {
   updateLangSwitch();
 
   document.getElementById('blk-blockType').addEventListener('change', (e) => {
-    const isReporter = e.target.value.includes('REPORTER');
-    document.getElementById('return-group').style.display = isReporter ? 'block' : 'block';
+    const bt = e.target.value;
+    const showReturn = bt.includes('REPORTER') || bt.includes('BOOLEAN');
+    document.getElementById('return-group').style.display = showReturn ? 'block' : 'none';
   });
 
   document.getElementById('ext-id').addEventListener('input', (e) => { state.extId = e.target.value; saveToLocalStorage(); });
   document.getElementById('ext-name').addEventListener('input', (e) => { state.extName = e.target.value; saveToLocalStorage(); });
+  document.getElementById('ext-targetTypes').addEventListener('change', (e) => { state.extTargetTypes = e.target.value; saveToLocalStorage(); });
+  document.getElementById('ext-docsURI').addEventListener('input', (e) => { state.extDocsURI = e.target.value; saveToLocalStorage(); });
+  document.getElementById('ext-sandboxMode').addEventListener('change', (e) => { state.extSandboxMode = e.target.value; saveToLocalStorage(); });
   ['ext-color1', 'ext-color2', 'ext-color3'].forEach(id => {
     document.getElementById(id).addEventListener('input', (e) => {
       state[id.replace('-', '')] = e.target.value.toUpperCase();
@@ -428,6 +447,8 @@ function openBlockEditor(index) {
     document.getElementById('blk-blockType').value = blk.blockType;
     document.getElementById('blk-text').value = blk.text;
     document.getElementById('blk-isEdgeActivated').checked = !!blk.isEdgeActivated;
+    document.getElementById('blk-hide').checked = !!blk.hide;
+    document.getElementById('blk-isTerminal').checked = !!blk.isTerminal;
     document.getElementById('blk-function').value = blk.funcBody || '';
     document.getElementById('blk-return').value = blk.returnExpr || '';
 
@@ -448,6 +469,8 @@ function openBlockEditor(index) {
     document.getElementById('blk-blockType').value = 'Scratch.BlockType.COMMAND';
     document.getElementById('blk-text').value = '';
     document.getElementById('blk-isEdgeActivated').checked = false;
+    document.getElementById('blk-hide').checked = false;
+    document.getElementById('blk-isTerminal').checked = false;
     document.getElementById('blk-function').value = '';
     document.getElementById('blk-return').value = '';
 
@@ -455,6 +478,11 @@ function openBlockEditor(index) {
     setThreeColors('#4C97FF');
     renderArgs([]);
   }
+
+  // Update return-group visibility
+  const bt = document.getElementById('blk-blockType').value;
+  const showReturn = bt.includes('REPORTER') || bt.includes('BOOLEAN');
+  document.getElementById('return-group').style.display = showReturn ? 'block' : 'none';
 }
 
 function closeBlockEditor() {
@@ -474,6 +502,8 @@ function saveBlock() {
     color2: document.getElementById('blk-color2').value.toUpperCase(),
     color3: document.getElementById('blk-color3').value.toUpperCase(),
     isEdgeActivated: document.getElementById('blk-isEdgeActivated').checked,
+    hide: document.getElementById('blk-hide').checked,
+    isTerminal: document.getElementById('blk-isTerminal').checked,
     args: collectArgs(),
     funcBody: document.getElementById('blk-function').value,
     returnExpr: document.getElementById('blk-return').value
@@ -487,6 +517,7 @@ function saveBlock() {
 
   saveToLocalStorage();
   renderBlockList();
+  renderMenuList();
   renderSnippets();
   closeBlockEditor();
   refreshPreview();
@@ -499,6 +530,7 @@ function deleteBlock() {
     state.blocks.splice(state.editingIndex, 1);
     saveToLocalStorage();
     renderBlockList();
+    renderMenuList();
     renderSnippets();
     closeBlockEditor();
     refreshPreview();
@@ -508,6 +540,34 @@ function deleteBlock() {
 }
 
 // ==================== Arguments ====================
+function buildArgTypeOptions(selectedType) {
+  const types = [
+    { value: 'string', label: i18n.t('blockEditor.argTypeString') },
+    { value: 'number', label: i18n.t('blockEditor.argTypeNumber') },
+    { value: 'boolean', label: i18n.t('blockEditor.argTypeBoolean') },
+    { value: 'color', label: i18n.t('blockEditor.argTypeColor') },
+    { value: 'angle', label: i18n.t('blockEditor.argTypeAngle') },
+    { value: 'matrix', label: i18n.t('blockEditor.argTypeMatrix') },
+    { value: 'note', label: i18n.t('blockEditor.argTypeNote') },
+    { value: 'variable', label: i18n.t('blockEditor.argTypeVariable') },
+    { value: 'list', label: i18n.t('blockEditor.argTypeList') },
+    { value: 'costume', label: i18n.t('blockEditor.argTypeCostume') },
+    { value: 'sound', label: i18n.t('blockEditor.argTypeSound') },
+    { value: 'image', label: i18n.t('blockEditor.argTypeImage') }
+  ];
+  return types.map(t =>
+    `<option value="${t.value}" ${selectedType===t.value?'selected':''}>${t.label}</option>`
+  ).join('');
+}
+
+function buildMenuRefOptions(selectedMenu) {
+  const opts = [`<option value="">—</option>`];
+  state.menus.forEach(m => {
+    opts.push(`<option value="${escapeQuote(m.name)}" ${selectedMenu===m.name?'selected':''}>${escapeQuote(m.name)}</option>`);
+  });
+  return opts.join('');
+}
+
 function renderArgs(args) {
   const container = document.getElementById('arg-list');
   container.innerHTML = '';
@@ -515,13 +575,14 @@ function renderArgs(args) {
     const div = document.createElement('div');
     div.className = 'arg-item';
     div.innerHTML = `
-      <input type="text" class="arg-name" value="${arg.name}" placeholder="${i18n.t('blockEditor.argName')}">
+      <input type="text" class="arg-name" value="${escapeQuote(arg.name)}" placeholder="${i18n.t('blockEditor.argName')}">
       <select class="arg-type">
-        <option value="string" ${arg.type==='string'?'selected':''}>${i18n.t('blockEditor.argTypeString')}</option>
-        <option value="number" ${arg.type==='number'?'selected':''}>${i18n.t('blockEditor.argTypeNumber')}</option>
-        <option value="boolean" ${arg.type==='boolean'?'selected':''}>${i18n.t('blockEditor.argTypeBoolean')}</option>
+        ${buildArgTypeOptions(arg.type)}
       </select>
-      <input type="text" class="arg-default" value="${arg.defaultValue||''}" placeholder="${i18n.t('blockEditor.argDefault')}" style="width:70px">
+      <select class="arg-menu-ref" style="width:80px">
+        ${buildMenuRefOptions(arg.menu)}
+      </select>
+      <input type="text" class="arg-default" value="${escapeQuote(arg.defaultValue||'')}" placeholder="${i18n.t('blockEditor.argDefault')}" style="width:70px">
       <button class="arg-remove" onclick="removeArg(this)">×</button>
     `;
     container.appendChild(div);
@@ -535,15 +596,154 @@ function addArg() {
   div.innerHTML = `
     <input type="text" class="arg-name" value="" placeholder="${i18n.t('blockEditor.argName')}">
     <select class="arg-type">
-      <option value="string">${i18n.t('blockEditor.argTypeString')}</option>
-      <option value="number">${i18n.t('blockEditor.argTypeNumber')}</option>
-      <option value="boolean">${i18n.t('blockEditor.argTypeBoolean')}</option>
+      ${buildArgTypeOptions('string')}
+    </select>
+    <select class="arg-menu-ref" style="width:80px">
+      ${buildMenuRefOptions('')}
     </select>
     <input type="text" class="arg-default" value="" placeholder="${i18n.t('blockEditor.argDefault')}" style="width:70px">
     <button class="arg-remove" onclick="removeArg(this)">×</button>
   `;
   container.appendChild(div);
 }
+
+// ==================== Extension-Level Menus ====================
+function initMenus() {
+  document.getElementById('btn-add-menu').addEventListener('click', () => {
+    state.menus.push({ name: 'menu' + (state.menus.length + 1), acceptReporters: true, items: [], isDynamic: false });
+    renderMenuList();
+    saveToLocalStorage();
+  });
+}
+
+function renderMenuList() {
+  const container = document.getElementById('menu-list');
+  container.innerHTML = '';
+  state.menus.forEach((menu, i) => {
+    const div = document.createElement('div');
+    div.className = 'menu-def-item';
+    let itemsPreview;
+    if (menu.isDynamic) {
+      itemsPreview = '⚡ ' + (menu.dynamicMethod || 'dynamicItems');
+    } else {
+      itemsPreview = menu.items.slice(0, 3).map(item => {
+        if (typeof item === 'string') return item;
+        return item.text || item.value || '';
+      }).join(', ') + (menu.items.length > 3 ? '...' : '');
+    }
+    div.innerHTML = `
+      <div class="menu-def-header">
+        <span class="menu-def-name">${escapeHTML(menu.name)}${menu.isDynamic ? ' <small>(动态)</small>' : ''}</span>
+        <span class="menu-def-preview">${escapeHTML(itemsPreview) || '—'}</span>
+        <button class="btn-icon" onclick="editMenu(${i})" title="${i18n.t('blockEditor.editMenu')}">✏️</button>
+        <button class="btn-icon" onclick="removeMenu(${i})" title="${i18n.t('blockEditor.removeMenu')}">×</button>
+      </div>
+    `;
+    container.appendChild(div);
+  });
+}
+
+window.editMenu = function(index) {
+  const menu = state.menus[index];
+  const modal = document.getElementById('menu-edit-modal');
+  document.getElementById('menu-edit-name').value = menu.name;
+  document.getElementById('menu-edit-acceptReporters').checked = menu.acceptReporters !== false;
+  document.getElementById('menu-edit-isDynamic').checked = !!menu.isDynamic;
+  document.getElementById('menu-edit-dynamicMethod').value = menu.dynamicMethod || '';
+
+  // Toggle dynamic/static sections
+  toggleMenuEditSections(menu.isDynamic);
+
+  const itemsList = document.getElementById('menu-edit-items');
+  itemsList.innerHTML = '';
+  (menu.items || []).forEach(item => {
+    addMenuEditRow(itemsList, item);
+  });
+
+  modal.style.display = 'flex';
+  modal._menuIndex = index;
+};
+
+function toggleMenuEditSections(isDynamic) {
+  const staticSection = document.getElementById('menu-static-items-section');
+  const dynamicSection = document.getElementById('menu-dynamic-method-section');
+  if (staticSection) staticSection.style.display = isDynamic ? 'none' : 'block';
+  if (dynamicSection) dynamicSection.style.display = isDynamic ? 'block' : 'none';
+}
+
+window.removeMenu = function(index) {
+  state.menus.splice(index, 1);
+  renderMenuList();
+  // Re-render args in block editor to update menu ref dropdowns
+  if (state.editingIndex >= 0) {
+    renderArgs(collectArgs());
+  }
+  saveToLocalStorage();
+};
+
+function addMenuEditRow(container, item) {
+  const row = document.createElement('div');
+  row.className = 'menu-edit-row';
+  const val = typeof item === 'string' ? item : (item.value || '');
+  const txt = typeof item === 'string' ? item : (item.text || '');
+  const isSep = val === '-' && txt === '-';
+  row.innerHTML = `
+    <input type="text" class="menu-edit-val" value="${escapeQuote(isSep ? '-' : val)}" placeholder="${i18n.t('blockEditor.menuItemValue')}">
+    <input type="text" class="menu-edit-txt" value="${escapeQuote(isSep ? '-' : txt)}" placeholder="${i18n.t('blockEditor.menuItemText')}">
+    <button class="arg-remove" onclick="this.closest('.menu-edit-row').remove()">×</button>
+  `;
+  container.appendChild(row);
+}
+
+window.addMenuEditItem = function() {
+  const itemsList = document.getElementById('menu-edit-items');
+  addMenuEditRow(itemsList, { value: '', text: '' });
+};
+
+window.addMenuEditSeparator = function() {
+  const itemsList = document.getElementById('menu-edit-items');
+  addMenuEditRow(itemsList, { value: '-', text: '-' });
+};
+
+window.saveMenuEdit = function() {
+  const modal = document.getElementById('menu-edit-modal');
+  const index = modal._menuIndex;
+  const menu = state.menus[index];
+  menu.name = document.getElementById('menu-edit-name').value.trim() || menu.name;
+  menu.acceptReporters = document.getElementById('menu-edit-acceptReporters').checked;
+  menu.isDynamic = document.getElementById('menu-edit-isDynamic').checked;
+  menu.dynamicMethod = document.getElementById('menu-edit-dynamicMethod').value.trim();
+
+  if (!menu.isDynamic) {
+    const items = [];
+    document.querySelectorAll('#menu-edit-items .menu-edit-row').forEach(row => {
+      const val = row.querySelector('.menu-edit-val').value.trim();
+      const txt = row.querySelector('.menu-edit-txt').value.trim();
+      if (val === '-') {
+        items.push('-');
+      } else if (val) {
+        if (txt && txt !== val) {
+          items.push({ text: txt, value: val });
+        } else {
+          items.push(val);
+        }
+      }
+    });
+    menu.items = items;
+  }
+
+  modal.style.display = 'none';
+  renderMenuList();
+  // Re-render args in block editor to update menu ref dropdowns
+  if (state.editingIndex >= 0) {
+    renderArgs(collectArgs());
+  }
+  saveToLocalStorage();
+};
+
+window.closeMenuEdit = function() {
+  document.getElementById('menu-edit-modal').style.display = 'none';
+};
 
 window.removeArg = function(btn) {
   btn.closest('.arg-item').remove();
@@ -556,7 +756,10 @@ function collectArgs() {
     const name = item.querySelector('.arg-name').value.trim();
     const type = item.querySelector('.arg-type').value;
     const defaultValue = item.querySelector('.arg-default').value;
-    if (name) args.push({ name, type, defaultValue });
+    const menuRef = item.querySelector('.arg-menu-ref').value;
+    const arg = { name, type, defaultValue };
+    if (menuRef) arg.menu = menuRef;
+    if (name) args.push(arg);
   });
   return args;
 }
@@ -581,6 +784,24 @@ function renderBlockList() {
 }
 
 // ==================== Block Preview ====================
+function getArgPreviewText(argDef, argName) {
+  if (!argDef) return argName;
+  if (argDef.menu) return '▼ ' + argDef.menu;
+  switch (argDef.type) {
+    case 'color': return argDef.defaultValue || '#ff0000';
+    case 'angle': return (argDef.defaultValue || '90') + '°';
+    case 'matrix': return '▦ 5×5';
+    case 'variable': return 'ｖ ' + (argDef.defaultValue || argName);
+    case 'list': return '≡ ' + (argDef.defaultValue || argName);
+    case 'costume': return '🎭 ' + (argDef.defaultValue || argName);
+    case 'sound': return '🔊 ' + (argDef.defaultValue || argName);
+    case 'image': return '🖼 img';
+    case 'note': return '♪ ' + (argDef.defaultValue || '60');
+    case 'boolean': return '<>';
+    default: return argDef.defaultValue || argName;
+  }
+}
+
 function refreshPreview() {
   const area = document.getElementById('block-preview');
   if (state.blocks.length === 0) {
@@ -626,7 +847,7 @@ function refreshPreview() {
         const argDef = (blk.args || []).find(a => a.name === part.name);
         const argType = argDef ? argDef.type : 'string';
         argSpan.className = `tw-arg ${argType}-arg`;
-        argSpan.textContent = argDef ? (argDef.defaultValue || part.name) : part.name;
+        argSpan.textContent = getArgPreviewText(argDef, part.name);
         shape.appendChild(argSpan);
       }
     });
@@ -670,45 +891,116 @@ function generateCode() {
   const id = toLowerCaseId(state.extId || 'myextension');
   const name = state.extName || 'My Extension';
   const className = toClassName(id);
+  const isUnsandboxed = state.extSandboxMode === 'unsandbox';
+
+  // Unsandbox header
+  let header = `(function(Scratch) {\n    'use strict';\n`;
+  if (isUnsandboxed) {
+    header += `\n    if (!Scratch.extensions.unsandboxed) {\n        throw new Error('本扩展仅支持非沙箱模式');\n    }\n`;
+  }
 
   let blocksCode = '';
   state.blocks.forEach((blk, i) => {
     const argsCode = generateArgsCode(blk);
-    const edgeLine = blk.isEdgeActivated ? `,\n                isEdgeActivated: true` : '';
+    const extraProps = [];
+    if (blk.isEdgeActivated) extraProps.push(`                isEdgeActivated: true`);
+    if (blk.hide) extraProps.push(`                hide: true`);
+    if (blk.isTerminal) extraProps.push(`                isTerminal: true`);
     const comma = i < state.blocks.length - 1 ? ',' : '';
 
     const c1 = blk.color1 || '#4C97FF';
     const c2 = blk.color2 || '#3373CC';
     const c3 = blk.color3 || '#295FA8';
-    blocksCode += `            {
-                opcode: '${blk.opcode}',
-                blockType: ${blk.blockType},
-                text: '${escapeQuote(blk.text)}',
-                color1: '${c1}',
-                color2: '${c2}',
-                color3: '${c3}'${argsCode ? `,\n                arguments: {\n${argsCode}                }` : ''}${edgeLine}
-            }${comma}\n`;
+    blocksCode += `            {\n`;
+    blocksCode += `                opcode: '${blk.opcode}',\n`;
+    blocksCode += `                blockType: ${blk.blockType},\n`;
+    blocksCode += `                text: '${escapeQuote(blk.text)}',\n`;
+    blocksCode += `                color1: '${c1}',\n`;
+    blocksCode += `                color2: '${c2}',\n`;
+    blocksCode += `                color3: '${c3}'`;
+    if (argsCode) {
+      blocksCode += `,\n                arguments: {\n${argsCode}                }`;
+    }
+    if (extraProps.length) {
+      blocksCode += `,\n${extraProps.join(',\n')}`;
+    }
+    blocksCode += `\n            }${comma}\n`;
   });
 
   const methodsCode = state.blocks.map(blk => generateMethodCode(blk)).join('\n\n');
 
-  return `class ${className} {
-    getInfo() {
-        return {
-            id: '${id}',
-            name: '${name}',
-            color1: '${state.extColor1 || '#4C97FF'}',
-            color2: '${state.extColor2 || '#3373CC'}',
-            color3: '${state.extColor3 || '#295FA8'}',
-            blocks: [
-${blocksCode}            ]
-        };
+  // Generate menus section
+  let menusCode = '';
+  if (state.menus.length > 0) {
+    menusCode = `,\n            menus: {\n`;
+    state.menus.forEach((menu, i) => {
+      const comma = i < state.menus.length - 1 ? ',' : '';
+      const ar = menu.acceptReporters !== false ? 'true' : 'false';
+      if (menu.isDynamic && menu.dynamicMethod) {
+        // Dynamic menu - reference a method name
+        menusCode += `                ${menu.name}: {\n`;
+        menusCode += `                    acceptReporters: ${ar},\n`;
+        menusCode += `                    items: '${escapeQuote(menu.dynamicMethod)}'\n`;
+        menusCode += `                }${comma}\n`;
+      } else {
+        // Static menu
+        let itemsCode;
+        if (!menu.items || menu.items.length === 0) {
+          itemsCode = '[]';
+        } else {
+          const itemStrs = menu.items.map(item => {
+            if (item === '-') return "                        '-'";
+            if (typeof item === 'string') return `                        '${escapeQuote(item)}'`;
+            return `                        { text: '${escapeQuote(item.text || item.value)}', value: '${escapeQuote(item.value)}' }`;
+          });
+          itemsCode = `[\n${itemStrs.join(',\n')}\n                    ]`;
+        }
+        menusCode += `                ${menu.name}: {\n`;
+        menusCode += `                    acceptReporters: ${ar},\n`;
+        menusCode += `                    items: ${itemsCode}\n`;
+        menusCode += `                }${comma}\n`;
+      }
+    });
+    menusCode += `            }`;
+  }
+
+  // Build getInfo return object fields
+  let getInfoFields = `                id: '${id}',\n`;
+  getInfoFields += `                name: '${name}',\n`;
+  getInfoFields += `                color1: '${state.extColor1 || '#4C97FF'}',\n`;
+  getInfoFields += `                color2: '${state.extColor2 || '#3373CC'}',\n`;
+  getInfoFields += `                color3: '${state.extColor3 || '#295FA8'}'`;
+  if (state.extTargetTypes) {
+    getInfoFields += `,\n                targetTypes: ['${state.extTargetTypes}']`;
+  }
+  if (state.extDocsURI) {
+    getInfoFields += `,\n                docsURI: '${escapeQuote(state.extDocsURI)}'`;
+  }
+  getInfoFields += `,\n                blocks: [\n${blocksCode}            ]${menusCode}`;
+
+  // Dynamic menu methods
+  let dynamicMenuMethods = '';
+  state.menus.forEach(menu => {
+    if (menu.isDynamic && menu.dynamicMethod) {
+      dynamicMenuMethods += `\n    ${menu.dynamicMethod}() {\n`;
+      dynamicMenuMethods += `        return ['选项A', '选项B', '选项C'];\n`;
+      dynamicMenuMethods += `    }\n`;
+    }
+  });
+
+  return `${header}
+    class ${className} {
+        getInfo() {
+            return {
+${getInfoFields}
+            };
+        }
+${dynamicMenuMethods}
+${methodsCode}
     }
 
-${methodsCode}
-}
-
-Scratch.extensions.register(new ${className}());`;
+    Scratch.extensions.register(new ${className}());
+})(Scratch);`;
 }
 
 function generateArgsCode(blk) {
@@ -717,7 +1009,11 @@ function generateArgsCode(blk) {
     const comma = i < blk.args.length - 1 ? ',' : '';
     let argDef = `                    ${arg.name}: {\n`;
     argDef += `                        type: ${getArgType(arg.type)}`;
-    if (arg.defaultValue) {
+    if (arg.menu) {
+      argDef += `,\n                        menu: '${escapeQuote(arg.menu)}'`;
+    } else if (arg.type === 'boolean') {
+      // Boolean args don't have defaultValue in TurboWarp
+    } else if (arg.defaultValue) {
       argDef += `,\n                        defaultValue: '${escapeQuote(arg.defaultValue)}'`;
     }
     argDef += `\n                    }${comma}`;
@@ -729,6 +1025,15 @@ function getArgType(type) {
   switch (type) {
     case 'number': return 'Scratch.ArgumentType.NUMBER';
     case 'boolean': return 'Scratch.ArgumentType.BOOLEAN';
+    case 'color': return 'Scratch.ArgumentType.COLOR';
+    case 'angle': return 'Scratch.ArgumentType.ANGLE';
+    case 'matrix': return 'Scratch.ArgumentType.MATRIX';
+    case 'note': return 'Scratch.ArgumentType.NOTE';
+    case 'variable': return 'Scratch.ArgumentType.VARIABLE';
+    case 'list': return 'Scratch.ArgumentType.LIST';
+    case 'costume': return 'Scratch.ArgumentType.COSTUME';
+    case 'sound': return 'Scratch.ArgumentType.SOUND';
+    case 'image': return 'Scratch.ArgumentType.IMAGE';
     default: return 'Scratch.ArgumentType.STRING';
   }
 }
@@ -745,9 +1050,7 @@ function generateMethodCode(blk) {
     }).join('\n');
   }
   const returnLine = blk.returnExpr ? `\n        ${blk.returnExpr}` : '';
-  return `    ${blk.opcode}({${params}}) {
-${body}${returnLine}
-    }`;
+  return `    ${blk.opcode}({${params}}) {\n${body}${returnLine}\n    }`;
 }
 
 function toLowerCaseId(id) {
@@ -801,7 +1104,11 @@ function exportURL() {
     extColor1: state.extColor1,
     extColor2: state.extColor2,
     extColor3: state.extColor3,
+    extTargetTypes: state.extTargetTypes,
+    extDocsURI: state.extDocsURI,
+    extSandboxMode: state.extSandboxMode,
     blocks: state.blocks,
+    menus: state.menus,
     code: state.cm.getValue()
   };
   const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(data))));
@@ -843,13 +1150,21 @@ function loadDataFromURL(str) {
   state.extColor1 = data.extColor1 || '#4C97FF';
   state.extColor2 = data.extColor2 || '#3373CC';
   state.extColor3 = data.extColor3 || '#295FA8';
+  state.extTargetTypes = data.extTargetTypes || '';
+  state.extDocsURI = data.extDocsURI || '';
+  state.extSandboxMode = data.extSandboxMode || 'sandbox';
   state.blocks = data.blocks || [];
+  state.menus = data.menus || [];
   document.getElementById('ext-id').value = state.extId;
   document.getElementById('ext-name').value = state.extName;
   document.getElementById('ext-color1').value = state.extColor1;
   document.getElementById('ext-color2').value = state.extColor2;
   document.getElementById('ext-color3').value = state.extColor3;
+  document.getElementById('ext-targetTypes').value = state.extTargetTypes;
+  document.getElementById('ext-docsURI').value = state.extDocsURI;
+  document.getElementById('ext-sandboxMode').value = state.extSandboxMode;
   renderBlockList();
+  renderMenuList();
   if (data.code) {
     state.cm.setValue(data.code);
   } else {
@@ -905,10 +1220,13 @@ function runDebug() {
   try {
     const mockScratch = {
       extensions: { unsandboxed: true, register: function(ext) {
-        logDebug('success', i18n.t('debug.registerSuccess', { name: ext.getInfo().name, id: ext.getInfo().id }));
-        logDebug('info', i18n.t('debug.blockCount', { n: ext.getInfo().blocks.length }));
+        const info = ext.getInfo();
+        logDebug('success', i18n.t('debug.registerSuccess', { name: info.name, id: info.id }));
+        logDebug('info', i18n.t('debug.blockCount', { n: info.blocks.length }));
 
-        ext.getInfo().blocks.forEach(blk => {
+        const extMenus = info.menus || {};
+        info.blocks.forEach(blk => {
+          if (blk.blockType === 'Scratch.BlockType.BUTTON' || blk.blockType === 7) return;
           if (typeof ext[blk.opcode] === 'function') {
             try {
               const args = {};
@@ -919,6 +1237,38 @@ function runDebug() {
                     args[key] = arg.defaultValue ? Number(arg.defaultValue) : 0;
                   } else if (arg.type === 'Scratch.ArgumentType.BOOLEAN' || arg.type === 3) {
                     args[key] = false;
+                  } else if (arg.type === 'Scratch.ArgumentType.COLOR' || arg.type === 4) {
+                    args[key] = arg.defaultValue || '#ff0000';
+                  } else if (arg.type === 'Scratch.ArgumentType.ANGLE' || arg.type === 5) {
+                    args[key] = arg.defaultValue ? Number(arg.defaultValue) : 90;
+                  } else if (arg.type === 'Scratch.ArgumentType.MATRIX' || arg.type === 6) {
+                    args[key] = arg.defaultValue || '0101010101010101010101010';
+                  } else if (arg.type === 'Scratch.ArgumentType.NOTE' || arg.type === 9) {
+                    args[key] = arg.defaultValue ? Number(arg.defaultValue) : 60;
+                  } else if (arg.type === 'Scratch.ArgumentType.VARIABLE' || arg.type === 10) {
+                    args[key] = arg.defaultValue || 'my variable';
+                  } else if (arg.type === 'Scratch.ArgumentType.LIST' || arg.type === 11) {
+                    args[key] = arg.defaultValue || 'my list';
+                  } else if (arg.type === 'Scratch.ArgumentType.COSTUME' || arg.type === 12) {
+                    args[key] = arg.defaultValue || 'costume1';
+                  } else if (arg.type === 'Scratch.ArgumentType.SOUND' || arg.type === 13) {
+                    args[key] = arg.defaultValue || 'sound1';
+                  } else if (arg.type === 'Scratch.ArgumentType.IMAGE' || arg.type === 14) {
+                    args[key] = arg.defaultValue || 'data:image/png;base64,';
+                  } else if (arg.menu && extMenus[arg.menu]) {
+                    const menu = extMenus[arg.menu];
+                    if (typeof menu.items === 'function') {
+                      const items = menu.items();
+                      args[key] = items.length > 0 ? (typeof items[0] === 'object' ? items[0].value : items[0]) : '';
+                    } else if (typeof menu.items === 'string' && ext[menu.items]) {
+                      const items = ext[menu.items]();
+                      args[key] = items.length > 0 ? (typeof items[0] === 'object' ? items[0].value : items[0]) : '';
+                    } else if (Array.isArray(menu.items) && menu.items.length > 0) {
+                      const first = menu.items[0];
+                      args[key] = typeof first === 'object' ? first.value : first;
+                    } else {
+                      args[key] = '';
+                    }
                   } else {
                     args[key] = arg.defaultValue || 'test';
                   }
@@ -939,7 +1289,7 @@ function runDebug() {
         });
       }},
       BlockType: { COMMAND: 'Scratch.BlockType.COMMAND', REPORTER: 'Scratch.BlockType.REPORTER', BOOLEAN: 'Scratch.BlockType.BOOLEAN', HAT: 'Scratch.BlockType.HAT', CONDITIONAL: 'Scratch.BlockType.CONDITIONAL', LOOP: 'Scratch.BlockType.LOOP', BUTTON: 'Scratch.BlockType.BUTTON' },
-      ArgumentType: { STRING: 'Scratch.ArgumentType.STRING', NUMBER: 'Scratch.ArgumentType.NUMBER', BOOLEAN: 'Scratch.ArgumentType.BOOLEAN', ANGLE: 'Scratch.ArgumentType.ANGLE', COLOR: 'Scratch.ArgumentType.COLOR', IMAGE: 'Scratch.ArgumentType.IMAGE', MATRIX: 'Scratch.ArgumentType.MATRIX', NOTE: 'Scratch.ArgumentType.NOTE' }
+      ArgumentType: { STRING: 'Scratch.ArgumentType.STRING', NUMBER: 'Scratch.ArgumentType.NUMBER', BOOLEAN: 'Scratch.ArgumentType.BOOLEAN', ANGLE: 'Scratch.ArgumentType.ANGLE', COLOR: 'Scratch.ArgumentType.COLOR', IMAGE: 'Scratch.ArgumentType.IMAGE', MATRIX: 'Scratch.ArgumentType.MATRIX', NOTE: 'Scratch.ArgumentType.NOTE', VARIABLE: 'Scratch.ArgumentType.VARIABLE', LIST: 'Scratch.ArgumentType.LIST', COSTUME: 'Scratch.ArgumentType.COSTUME', SOUND: 'Scratch.ArgumentType.SOUND' }
     };
 
     // Wrap code to provide Scratch in scope
@@ -986,6 +1336,10 @@ const scratchAPISnippets = [
   { category: 'argType', code: 'Scratch.ArgumentType.IMAGE', desc_zh: '图片数据 - 需 dataURI 格式', desc_en: 'Image data (requires dataURI)', type: 'ARG', hasReturn: false, returnType: '—', hasParams: false },
   { category: 'argType', code: 'Scratch.ArgumentType.MATRIX', desc_zh: '矩阵编辑器 - 5x5 点阵', desc_en: 'Matrix editor - 5x5 grid', type: 'ARG', hasReturn: false, returnType: '—', hasParams: false },
   { category: 'argType', code: 'Scratch.ArgumentType.NOTE', desc_zh: '音符选择器 - MIDI 音符编号', desc_en: 'Note picker - MIDI note number', type: 'ARG', hasReturn: false, returnType: '—', hasParams: false },
+  { category: 'argType', code: 'Scratch.ArgumentType.VARIABLE', desc_zh: '变量选择器 - 选择项目变量', desc_en: 'Variable picker - select project variable', type: 'ARG', hasReturn: false, returnType: '—', hasParams: false },
+  { category: 'argType', code: 'Scratch.ArgumentType.LIST', desc_zh: '列表选择器 - 选择项目列表', desc_en: 'List picker - select project list', type: 'ARG', hasReturn: false, returnType: '—', hasParams: false },
+  { category: 'argType', code: 'Scratch.ArgumentType.COSTUME', desc_zh: '造型选择器 - 选择角色造型', desc_en: 'Costume picker - select sprite costume', type: 'ARG', hasReturn: false, returnType: '—', hasParams: false },
+  { category: 'argType', code: 'Scratch.ArgumentType.SOUND', desc_zh: '声音选择器 - 选择角色声音', desc_en: 'Sound picker - select sprite sound', type: 'ARG', hasReturn: false, returnType: '—', hasParams: false },
 
   // ===== 参数定义模板 Argument Definition =====
   { category: 'argDef', code: "{ type: Scratch.ArgumentType.STRING, defaultValue: 'hello' }", desc_zh: '字符串参数定义 - 带默认值', desc_en: 'String argument with default value', type: 'ARG', hasReturn: false, returnType: '—', hasParams: false },
@@ -997,6 +1351,7 @@ const scratchAPISnippets = [
   { category: 'argDef', code: "{ type: Scratch.ArgumentType.COLOR, defaultValue: '#ff0000' }", desc_zh: '颜色参数定义 - 默认红色', desc_en: 'Color argument - default red', type: 'ARG', hasReturn: false, returnType: '—', hasParams: false },
   { category: 'argDef', code: "{ type: Scratch.ArgumentType.NOTE, defaultValue: '60' }", desc_zh: '音符参数定义 - 默认中央 C (60)', desc_en: 'Note argument - default middle C (60)', type: 'ARG', hasReturn: false, returnType: '—', hasParams: false },
   { category: 'argDef', code: "{ type: Scratch.ArgumentType.MATRIX, defaultValue: '0101010101010101010101010' }", desc_zh: '矩阵参数定义 - 5x5 点阵默认值', desc_en: 'Matrix argument - 5x5 grid default', type: 'ARG', hasReturn: false, returnType: '—', hasParams: false },
+  { category: 'argDef', code: "{ type: Scratch.ArgumentType.STRING, menu: 'myMenu' }", desc_zh: '菜单参数定义 - STRING 类型 + menu 属性关联下拉菜单', desc_en: 'Menu argument - STRING type + menu property links to dropdown', type: 'ARG', hasReturn: false, returnType: '—', hasParams: false },
 
   // ===== 参数调用 Argument Access =====
   { category: 'argAccess', code: 'args.TEXT', desc_zh: '获取字符串参数 TEXT 的值', desc_en: 'Get string argument TEXT value', type: 'PARAM', hasReturn: true, returnType: 'string', hasParams: false },
@@ -1081,6 +1436,13 @@ const scratchAPISnippets = [
   { category: 'control', code: "if (CONDITION) { util.startBranch(1, false); }", desc_zh: 'CONDITIONAL 条件块 - if 判断', desc_en: 'CONDITIONAL block - if check', type: 'CTRL', hasReturn: false, returnType: '—', hasParams: true },
   { category: 'control', code: "util.stackFrame.executed = util.stackFrame.executed || 0;\nif (util.stackFrame.executed < 1 && CONDITION) {\n  util.stackFrame.executed++;\n  util.startBranch(1, true);\n}", desc_zh: 'LOOP 条件循环 - while 条件成立时循环', desc_en: 'LOOP conditional - while condition is true', type: 'CTRL', hasReturn: false, returnType: '—', hasParams: true },
   { category: 'control', code: "util.stackFrame.loopCounter = (util.stackFrame.loopCounter || 0) + 1;\nif (util.stackFrame.loopCounter <= MAX) {\n  util.startBranch(1, true);\n}", desc_zh: 'LOOP 计数循环 - 带计数器', desc_en: 'LOOP counter - with counter variable', type: 'CTRL', hasReturn: false, returnType: '—', hasParams: true },
+
+  // ===== 菜单定义 Menu Definition =====
+  { category: 'menu', code: "menus: {\n    myMenu: {\n        acceptReporters: true,\n        items: [\n            { text: '选项A', value: 'a' },\n            { text: '选项B', value: 'b' }\n        ]\n    }\n}", desc_zh: '菜单定义 - 文字/值分离菜单 (acceptReporters: true)', desc_en: 'Menu definition - text/value separated (acceptReporters: true)', type: 'MENU', hasReturn: false, returnType: '—', hasParams: false },
+  { category: 'menu', code: "menus: {\n    myMenu: {\n        acceptReporters: false,\n        items: ['选项A', '选项B', '选项C']\n    }\n}", desc_zh: '菜单定义 - 简写字符串列表 (acceptReporters: false)', desc_en: 'Menu definition - shorthand string list (acceptReporters: false)', type: 'MENU', hasReturn: false, returnType: '—', hasParams: false },
+  { category: 'menu', code: "menus: {\n    myMenu: {\n        acceptReporters: true,\n        items: 'getDynamicItems'\n    }\n}", desc_zh: '菜单定义 - 动态菜单（方法名字符串）', desc_en: 'Menu definition - dynamic menu (method name string)', type: 'MENU', hasReturn: false, returnType: '—', hasParams: false },
+  { category: 'menu', code: "menus: {\n    myMenu: {\n        items: ['功能1', '-', '功能2', '-', '功能3']\n    }\n}", desc_zh: '菜单定义 - 带分隔线的菜单', desc_en: 'Menu definition - menu with separators', type: 'MENU', hasReturn: false, returnType: '—', hasParams: false },
+  { category: 'menu', code: "MODE: {\n    type: Scratch.ArgumentType.STRING,\n    menu: 'modeList'\n}", desc_zh: '菜单参数引用 - 参数通过 menu 属性关联菜单', desc_en: 'Menu argument reference - arg links to menu via menu property', type: 'MENU', hasReturn: false, returnType: '—', hasParams: false },
 ];
 
 const jsSnippets = [
@@ -1431,6 +1793,8 @@ function initAutocomplete() {
     'Scratch.ArgumentType.STRING', 'Scratch.ArgumentType.NUMBER', 'Scratch.ArgumentType.BOOLEAN',
     'Scratch.ArgumentType.ANGLE', 'Scratch.ArgumentType.COLOR', 'Scratch.ArgumentType.IMAGE',
     'Scratch.ArgumentType.MATRIX', 'Scratch.ArgumentType.NOTE',
+    'Scratch.ArgumentType.VARIABLE', 'Scratch.ArgumentType.LIST',
+    'Scratch.ArgumentType.COSTUME', 'Scratch.ArgumentType.SOUND',
     'Scratch.extensions.register', 'Scratch.extensions.unsandboxed',
     'Scratch.vm.runtime.targets', 'Scratch.vm.runtime.ioDevices',
     'Scratch.vm.runtime.ioDevices.clock.projectTimer',
@@ -1573,7 +1937,11 @@ function saveToLocalStorage() {
       extColor1: state.extColor1,
       extColor2: state.extColor2,
       extColor3: state.extColor3,
+      extTargetTypes: state.extTargetTypes,
+      extDocsURI: state.extDocsURI,
+      extSandboxMode: state.extSandboxMode,
       blocks: state.blocks,
+      menus: state.menus,
       code: state.cm ? state.cm.getValue() : ''
     }));
   } catch (e) {}
@@ -1588,12 +1956,19 @@ function loadFromLocalStorage() {
       state.extColor1 = data.extColor1 || '#4C97FF';
       state.extColor2 = data.extColor2 || '#3373CC';
       state.extColor3 = data.extColor3 || '#295FA8';
+      state.extTargetTypes = data.extTargetTypes || '';
+      state.extDocsURI = data.extDocsURI || '';
+      state.extSandboxMode = data.extSandboxMode || 'sandbox';
       state.blocks = data.blocks || [];
+      state.menus = data.menus || [];
       document.getElementById('ext-id').value = state.extId;
       document.getElementById('ext-name').value = state.extName;
       document.getElementById('ext-color1').value = state.extColor1;
       document.getElementById('ext-color2').value = state.extColor2;
       document.getElementById('ext-color3').value = state.extColor3;
+      document.getElementById('ext-targetTypes').value = state.extTargetTypes;
+      document.getElementById('ext-docsURI').value = state.extDocsURI;
+      document.getElementById('ext-sandboxMode').value = state.extSandboxMode;
       if (data.code) {
         state.cm.setValue(data.code);
       }
